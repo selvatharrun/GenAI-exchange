@@ -27,6 +27,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -37,6 +38,8 @@ import {
   Sparkles,
   PenSquare,
   FileText,
+  MessageCircleQuestion,
+  Book,
 } from "lucide-react";
 import { useSidebar } from "./ui/sidebar";
 
@@ -49,7 +52,8 @@ function DocunoteContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState("1");
   
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState<string[]>([]);
+  const [questions, setQuestions] = useState<{q: string, a: string}[]>([]);
   
   const [summary, setSummary] = useState("");
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
@@ -64,7 +68,8 @@ function DocunoteContent() {
       setPdfFile(file);
       setSummary("");
       setSelectionSummary("");
-      setNotes("");
+      setNotes([]);
+      setQuestions([]);
       setCurrentPage(1);
       setPageInput("1");
 
@@ -135,6 +140,14 @@ function DocunoteContent() {
     }
   };
 
+  const handleAddNote = () => {
+    if (selectionText.trim()) {
+      setNotes(prev => [...prev, selectionText]);
+      setSelectionText("");
+      toast({ title: "Note added!" });
+    }
+  }
+
   const updateCurrentPage = (newPage: number) => {
     const page = Math.max(1, newPage);
     setCurrentPage(page);
@@ -169,7 +182,14 @@ function DocunoteContent() {
               <FileText className="h-6 w-6 text-primary" />
               <h1 className="text-xl font-bold tracking-tight">DocuNote</h1>
             </div>
-            <SidebarTrigger />
+            {!sidebarOpen && (
+              <div className="md:hidden">
+                  <SidebarTrigger />
+              </div>
+            )}
+             <div className="hidden md:block">
+                  <SidebarTrigger />
+              </div>
           </div>
         </SidebarHeader>
 
@@ -218,11 +238,11 @@ function DocunoteContent() {
 
         <ScrollArea className="flex-1">
           <SidebarContent className="p-2">
-            <Accordion type="multiple" defaultValue={["summary", "notes"]} className="w-full">
+            <Accordion type="multiple" defaultValue={["summary"]} className="w-full">
               <AccordionItem value="summary">
                 <AccordionTrigger>
                   <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4" /> AI Summaries
+                    <Sparkles className="h-4 w-4" /> AI Actions
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="space-y-4">
@@ -249,17 +269,23 @@ function DocunoteContent() {
                   )}
 
                   <div className="space-y-2">
-                    <Label htmlFor="selection-text">Summarize Selection</Label>
+                    <Label htmlFor="selection-text">Selected Text</Label>
                     <Textarea 
                       id="selection-text"
                       placeholder="Copy and paste text from the PDF here..."
                       value={selectionText}
                       onChange={(e) => setSelectionText(e.target.value)}
                       disabled={!pdfFile}
+                      className="min-h-[120px]"
                     />
-                     <Button onClick={handleGenerateSelectionSummary} disabled={!selectionText.trim() || isSelectionSummaryLoading} className="w-full">
-                      Summarize Selection
-                    </Button>
+                     <div className="grid grid-cols-2 gap-2">
+                        <Button onClick={handleGenerateSelectionSummary} disabled={!selectionText.trim() || isSelectionSummaryLoading}>
+                          Summarize
+                        </Button>
+                        <Button onClick={handleAddNote} disabled={!selectionText.trim()} variant="secondary">
+                          Add to Notes
+                        </Button>
+                     </div>
                   </div>
 
                   {(isSelectionSummaryLoading || selectionSummary) && (
@@ -281,35 +307,66 @@ function DocunoteContent() {
                   )}
                 </AccordionContent>
               </AccordionItem>
-
-              <AccordionItem value="notes">
-                <AccordionTrigger>
-                  <div className="flex items-center gap-2">
-                    <PenSquare className="h-4 w-4" /> Notes
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <Textarea
-                    placeholder="Type your notes here..."
-                    className="min-h-[200px]"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    disabled={!pdfFile}
-                  />
-                </AccordionContent>
-              </AccordionItem>
             </Accordion>
           </SidebarContent>
         </ScrollArea>
       </Sidebar>
       <SidebarInset>
-        <div className="p-4 relative h-full">
+        <div className="p-4 relative h-full flex flex-col">
           {!sidebarOpen && (
               <div className="absolute top-2 left-2 z-20">
                   <SidebarTrigger />
               </div>
           )}
-          <PdfViewer fileUrl={pdfDataUrl} page={currentPage} />
+           <Tabs defaultValue="pdf-viewer" className="flex-1 flex flex-col">
+              <TabsList className="mb-4">
+                <TabsTrigger value="pdf-viewer">
+                  <Book className="w-4 h-4 mr-2" />
+                  PDF Viewer
+                </TabsTrigger>
+                <TabsTrigger value="notes" disabled={!pdfFile}>
+                  <PenSquare className="w-4 h-4 mr-2" />
+                  Notes
+                </TabsTrigger>
+                <TabsTrigger value="q-and-a" disabled={!pdfFile}>
+                  <MessageCircleQuestion className="w-4 h-4 mr-2" />
+                  Q&A
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="pdf-viewer" className="flex-1">
+                <PdfViewer fileUrl={pdfDataUrl} page={currentPage} />
+              </TabsContent>
+              <TabsContent value="notes" className="flex-1">
+                <Card className="h-full">
+                  <CardHeader>
+                    <CardTitle>My Notes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {notes.length > 0 ? (
+                      <ul className="space-y-4">
+                        {notes.map((note, index) => (
+                          <li key={index} className="border-l-2 border-primary pl-4 text-sm italic">
+                            {note}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No notes added yet. Copy text from the PDF and add it here.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="q-and-a" className="flex-1">
+                 <Card className="h-full">
+                  <CardHeader>
+                    <CardTitle>Question & Answers</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">Summarize selected text from the document to see Q&A here.</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
         </div>
       </SidebarInset>
     </>
