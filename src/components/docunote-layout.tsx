@@ -38,8 +38,9 @@ import {
   PenSquare,
   FileText,
 } from "lucide-react";
+import { useSidebar } from "./ui/sidebar";
 
-export function DocuNoteLayout() {
+function DocunoteContent() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -157,10 +158,11 @@ export function DocuNoteLayout() {
     }
   }
 
+  const { open: sidebarOpen } = useSidebar();
 
   return (
-    <SidebarProvider>
-      <Sidebar collapsible="icon">
+    <>
+      <Sidebar collapsible="offcanvas">
         <SidebarHeader className="p-2">
           <div className="flex h-10 items-center justify-between">
             <div className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
@@ -301,10 +303,23 @@ export function DocuNoteLayout() {
         </ScrollArea>
       </Sidebar>
       <SidebarInset>
-        <div className="h-full p-4">
+        <div className="p-4 relative h-full">
+          {!sidebarOpen && (
+              <div className="absolute top-2 left-2 z-20">
+                  <SidebarTrigger />
+              </div>
+          )}
           <PdfViewer fileUrl={pdfDataUrl} page={currentPage} />
         </div>
       </SidebarInset>
+    </>
+  );
+}
+
+export function DocuNoteLayout() {
+  return (
+    <SidebarProvider>
+      <DocunoteContent />
     </SidebarProvider>
   );
 }
