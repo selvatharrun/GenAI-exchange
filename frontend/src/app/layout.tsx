@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "../components/ui/toaster"
 
+
 export const metadata: Metadata = {
   title: 'DocuNote',
   description: 'Upload, view, and summarize your PDF documents with AI.',
