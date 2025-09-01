@@ -68,7 +68,9 @@ function DocunoteContent() {
   const [selectionSummary, setSelectionSummary] = useState("");
   const [isSelectionSummaryLoading, setIsSelectionSummaryLoading] = useState(false);
 
-  const handleFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+  const [gsUri, setGsUri] = useState<string | null>(null);
+
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type === "application/pdf") {
       setIsLoadingPdf(true);
@@ -81,6 +83,7 @@ function DocunoteContent() {
       setPageInput("1");
       setTotalPages(0);
 
+      // Preview PDF
       const reader = new FileReader();
       reader.onload = (e) => {
         setPdfDataUrl(e.target?.result as string);
@@ -99,6 +102,40 @@ function DocunoteContent() {
         });
       };
       reader.readAsDataURL(file);
+
+      // Upload PDF to backend
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+        const response = await fetch('http://localhost:5000/upload-pdf', {
+          method: 'POST',
+          body: formData,
+        });    
+        const data = await response.json();
+        console.log(response);
+        console.log(data);
+        if (response.ok && data.gcs_uri) {
+          setGsUri(data.gcs_uri);
+          toast({
+            title: "Upload Successful",
+            description: `GS URI: ${data.gcs_uri}`,
+          });
+        } else {
+          toast({
+            title: "Upload Failed",
+            description: data.error || "Unknown error",
+            variant: "destructive",
+          });
+        }
+      } 
+      
+      catch (error) {
+        toast({
+          title: "Upload Error",
+          description: String(error),
+          variant: "destructive",
+        });
+      }
     } else {
       toast({
         variant: "destructive",
@@ -106,11 +143,11 @@ function DocunoteContent() {
         description: "Please upload a valid PDF file.",
       });
     }
-  }, [toast]);
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
   };
+
+const handleUploadClick = () => {
+  fileInputRef.current?.click();
+};
 
   const handleDownload = () => {
     if (pdfFile) {
@@ -664,6 +701,11 @@ function DocunoteContent() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
+                    {/* {gsUri && (
+                      <div data-slot="card-content" className="mb-4 text-xs text-muted-foreground">
+                        <strong>GS URI:</strong> {gsUri}
+                      </div>
+                    )} */}
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <MessageCircleQuestion className="h-12 w-12 text-muted-foreground/30 mb-4" />
                     <p className="text-muted-foreground mb-2">No Q&A generated yet</p>
