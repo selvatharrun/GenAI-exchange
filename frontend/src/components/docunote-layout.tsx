@@ -167,6 +167,26 @@ const handleUploadClick = () => {
     }
   };
 
+  const handleDeletePdf = () => {
+  setPdfFile(null);
+  setPdfDataUrl(null);
+  setSummary("");
+  setSelectionSummary("");
+  setNotes([]);
+  setQuestions([]);
+  setCurrentPage(1);
+  setPageInput("1");
+  setTotalPages(0);
+  setSelectionText("");
+  setGsUri(null);
+
+  toast({
+    title: "PDF Removed",
+    description: "You can upload a new PDF now.",
+  });
+};
+
+
   const handleGenerateSummary = async () => {
     if (!pdfDataUrl) return;
     setIsSummaryLoading(true);
@@ -320,6 +340,16 @@ const handleUploadClick = () => {
                 <FileDown className="mr-2 h-4 w-4" /> 
                 Download PDF
               </Button>
+
+              <Button 
+                variant="destructive" 
+                onClick={handleDeletePdf} 
+                className="w-full"
+                size="sm"
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> 
+                Delete PDF
+              </Button>
               
               {/* File Info */}
               <div className="p-2 bg-muted/50 rounded-md">
@@ -342,54 +372,6 @@ const handleUploadClick = () => {
           )}
         </div>
 
-        {/* Page Navigation */}
-        {pdfFile && (
-          <>
-            <div className="p-4 space-y-3 border-b">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <Book className="h-4 w-4" />
-                Page Navigation
-              </Label>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={() => updateCurrentPage(currentPage - 1)} 
-                  disabled={currentPage <= 1}
-                  className="h-8 w-8"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <div className="flex-1">
-                  <Input
-                    type="text"
-                    className="text-center h-8"
-                    value={pageInput}
-                    onChange={handlePageInputChange}
-                    onKeyDown={handlePageInputKeyDown}
-                    onBlur={handlePageInputSubmit}
-                    placeholder="Page"
-                  />
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={() => updateCurrentPage(currentPage + 1)}
-                  disabled={totalPages > 0 && currentPage >= totalPages}
-                  className="h-8 w-8"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-              {totalPages > 0 && (
-                <p className="text-xs text-muted-foreground text-center">
-                  Page {currentPage} of {totalPages}
-                </p>
-              )}
-            </div>
-          </>
-        )}
-
         <ScrollArea className="flex-1">
           <SidebarContent className="p-4">
             <Accordion type="multiple" defaultValue={["ai-actions"]} className="w-full">
@@ -401,62 +383,7 @@ const handleUploadClick = () => {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4 space-y-4">
-                  {/* Document Summary */}
-                  <div className="space-y-3">
-                    <Button 
-                      onClick={handleGenerateSummary} 
-                      disabled={!pdfFile || isSummaryLoading} 
-                      className="w-full"
-                    >
-                      {isSummaryLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Analyzing...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="mr-2 h-4 w-4" />
-                          Summarize Document
-                        </>
-                      )}
-                    </Button>
-
-                    {(isSummaryLoading || summary) && (
-                      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
-                        <CardHeader className="p-3">
-                          <CardTitle className="text-sm flex items-center justify-between">
-                            <span className="flex items-center gap-2">
-                              <Sparkles className="h-4 w-4 text-blue-600" />
-                              Document Summary
-                            </span>
-                            {summary && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleCopyText(summary)}
-                                className="h-6 w-6 p-0"
-                              >
-                                <Copy className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-3 pt-0">
-                          {isSummaryLoading ? (
-                            <div className="space-y-2">
-                              <Skeleton className="h-3 w-full" />
-                              <Skeleton className="h-3 w-full" />
-                              <Skeleton className="h-3 w-3/4" />
-                            </div>
-                          ) : (
-                            <div className="text-sm leading-relaxed max-h-40 overflow-y-auto">
-                              <p className="whitespace-pre-wrap">{summary}</p>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    )}
-                  </div>
+                  
 
                   {/* Selection Analysis */}
                   <div className="space-y-3">
@@ -619,7 +546,10 @@ const handleUploadClick = () => {
 
             <TabsContent value="pdf-viewer" className="flex-1">
               <div className="h-full rounded-lg border bg-card overflow-hidden">
-                <PdfViewer fileUrl={pdfDataUrl} page={currentPage} />
+                <PdfViewer 
+                  fileUrl={pdfDataUrl} 
+                  onTextSelect={setSelectionText}
+                />
               </div>
             </TabsContent>
 
