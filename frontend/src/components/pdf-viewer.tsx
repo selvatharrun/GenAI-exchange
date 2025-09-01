@@ -108,7 +108,7 @@ export function PdfViewer({ fileUrl, onTextSelect }: PdfViewerProps) {
     <div className="relative h-full w-full bg-gray-50 dark:bg-gray-900">
       {/* ✅ Centered Toolbar */}
       <div className="flex items-center justify-center gap-6 px-4 py-3 border-b bg-white dark:bg-gray-800 sticky top-0 z-10 shadow-sm">
-        {/* Zoom & Rotate group */}
+        {/* Zoom & Rotate groups */}
         <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-xl">
           <button
             className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition"

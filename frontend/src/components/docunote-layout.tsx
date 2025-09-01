@@ -83,7 +83,7 @@ function DocunoteContent() {
       setPageInput("1");
       setTotalPages(0);
 
-      // Preview PDF
+      // Preview PDFs
       const reader = new FileReader();
       reader.onload = (e) => {
         setPdfDataUrl(e.target?.result as string);
