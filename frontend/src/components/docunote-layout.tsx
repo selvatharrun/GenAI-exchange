@@ -46,6 +46,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useSidebar } from "./ui/sidebar";
+import QnAChat from "@/components/qna-chat";
+
 
 function DocunoteContent() {
   const { toast } = useToast();
@@ -630,20 +632,10 @@ const handleUploadClick = () => {
                     )}
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                    {/* {gsUri && (
-                      <div data-slot="card-content" className="mb-4 text-xs text-muted-foreground">
-                        <strong>GS URI:</strong> {gsUri}
-                      </div>
-                    )} */}
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <MessageCircleQuestion className="h-12 w-12 text-muted-foreground/30 mb-4" />
-                    <p className="text-muted-foreground mb-2">No Q&A generated yet</p>
-                    <p className="text-sm text-muted-foreground/70">
-                      Analyze selected text to generate questions and answers
-                    </p>
-                  </div>
-                </CardContent>
+                <CardContent className="p-0 h-[calc(100vh-12rem)]">
+  <QnAChat gsUri={gsUri} />
+</CardContent>
+
               </Card>
             </TabsContent>
           </Tabs>
