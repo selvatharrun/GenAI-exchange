@@ -633,8 +633,8 @@ const handleUploadClick = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0 h-[calc(100vh-12rem)]">
-  <QnAChat gsUri={gsUri} />
-</CardContent>
+                    <QnAChat gsUri={gsUri} />
+                </CardContent>
 
               </Card>
             </TabsContent>

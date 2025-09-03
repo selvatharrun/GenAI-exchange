@@ -82,7 +82,7 @@ export default function QnAChat({ gsUri }: { gsUri: string | null }) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input box */}
+      {/* Input boxs */}
       <div className="border-t p-3 bg-white dark:bg-gray-800">
         <form onSubmit={handleSendMessage} className="flex items-end gap-2">
           <textarea
