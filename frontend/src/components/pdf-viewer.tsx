@@ -176,7 +176,7 @@ export function PdfViewer({ fileUrl, onTextSelect }: PdfViewerProps) {
           />
         </Document>
 
-        {/* Floating Analyze button */}
+        {/* Floating Analyzes button */}
         {menu && (
           <div
             id="pdf-analyze-button"
