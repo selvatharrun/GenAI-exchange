@@ -515,6 +515,9 @@ const handleUploadClick = () => {
             </div>
           )}
           
+
+          {/* contains the list of all the tabs */}
+          
           <Tabs defaultValue="pdf-viewer" className="flex-1 flex flex-col">
             <TabsList className="mb-4 w-full sm:w-auto">
               <TabsTrigger value="pdf-viewer" className="flex-1 sm:flex-none">
@@ -541,9 +544,13 @@ const handleUploadClick = () => {
                     {questions.length}
                   </span>
                 )}
+              <TabsTrigger value="ocr" className="flex-1 sm:flex-none">
+                OCR
+              </TabsTrigger>
               </TabsTrigger>
             </TabsList>
-
+            
+            {/* this is for the pdf viewer */}
             <TabsContent value="pdf-viewer" className="flex-1">
               <div className="h-full rounded-lg border bg-card overflow-hidden">
                 <PdfViewer 
@@ -553,6 +560,7 @@ const handleUploadClick = () => {
               </div>
             </TabsContent>
 
+            {/* this is for the notes tab */}
             <TabsContent value="notes" className="flex-1">
               <Card className="h-full">
                 <CardHeader>
@@ -617,6 +625,7 @@ const handleUploadClick = () => {
               </Card>
             </TabsContent>
 
+            {/* this is for the qna section */}
             <TabsContent value="q-and-a" className="flex-1">
               <Card className="h-full">
                 <CardHeader>
@@ -645,6 +654,12 @@ const handleUploadClick = () => {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* this is for the ocr section */}
+            <TabsContent value="ocr" className="flex-1">
+              {/* OCR tab content goes here */}
+              <div className="p-4">OCR functionality will be available here.</div>
             </TabsContent>
           </Tabs>
         </div>
