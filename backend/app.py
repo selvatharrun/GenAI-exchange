@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from google.cloud import storage
 import os
+from Class.chat import automated_chat
 
 app = Flask(__name__)
 CORS(app)
@@ -38,6 +39,18 @@ def upload_pdf():
         )
         return jsonify({"message": "File uploaded", "gcs_uri": gs_uri}), 200
     return jsonify({"error": "Invalid file type"}), 400
+
+
+@app.route('/pdf-chat', methods=['POST'])
+def pdf_chat():
+    data = request.get_json()
+    question = data.get('question')
+    file_path = data.get('gsUri')  # or use another key if your frontend sends a different name
+
+    # Optionally, you can manage chat_history per session/user if needed
+    response = automated_chat(question, file_path=file_path, stream_response=False, chat_history=True)
+
+    return jsonify({"answer": response})
 
 if __name__ == '__main__':
     app.run(debug=True)
