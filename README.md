@@ -1,190 +1,207 @@
-# GenAI-exchange
+GenAI-exchange
+GenAI-exchange is a full-stack application designed to simplify the understanding of legal documents for both lawyers and non-lawyers. It processes contracts, filings, and other legal PDFs to deliver:
 
-GenAI-exchange is a full-stack project to help demystify legal documents. It enables users—lawyers and non-lawyers alike—to quickly understand contracts and filings by:
-- Summarizing long documents into clear, plain-language explanations while preserving legal precision.
-- Extracting structured data such as parties, dates, amounts, obligations, clauses, and definitions.
-- Powering grounded Q&A: answers are strictly based on the uploaded document’s text with citations to the relevant sections/clauses.
-- Highlighting ambiguities and potential areas that may need professional review.
-- Maintaining a neutral, factual tone and avoiding legal advice.
+Plain-language summaries that retain legal accuracy.
+Structured data extraction (e.g., parties, dates, amounts, obligations, clauses, definitions).
+Grounded Q&A with answers directly tied to the document's text, including citations to relevant sections/clauses.
+Ambiguity detection to flag areas for professional review.
+Neutral, factual outputs, avoiding legal advice.
 
-The system includes:
-- A Next.js frontend for document upload and exploration.
-- A Flask backend that receives PDF uploads and stores them in Google Cloud Storage (GCS), returning a gs:// URI that downstream services (e.g., Vertex AI / Document AI) can use for analysis.
+Features
 
-## Project Structure
+Frontend: A Next.js application for intuitive document uploads and interactive result exploration.
+Backend: A Flask server that handles PDF uploads, stores them in Google Cloud Storage (GCS), and returns gs:// URIs for downstream AI processing (e.g., Google Cloud Document AI, Vertex AI).
+AI Integration: Leverages Google Cloud services for document summarization, data extraction, and citation-backed Q&A.
+Security: Validates file types, enforces least-privilege IAM, and supports secure deployment practices.
 
-- frontend/ — Next.js app bootstrapped with create-next-app.
-- backend/ — Flask server exposing an upload endpoint and example notebooks for Google Cloud Document AI.
-  - app.py — Flask app with a /upload-pdf endpoint that uploads a received PDF to GCS and returns its gs:// URI.
-  - testings/ — Prototyping notebooks for uploading to GCS and calling Document AI (sync/async).
-- LICENSE, README.md — Repository meta.
+Project Structure
+GenAI-exchange/
+├── backend/                   # Flask backend
+│   ├── app.py                # Main Flask app with /upload-pdf endpoint
+│   ├── testings/             # Prototyping notebooks for GCS and Document AI
+│   │   ├── chatTest.ipynb
+│   │   ├── documentai-sync-v1.0.0.ipynb
+│   │   └── documentai-async-v1.0.0.ipynb
+├── frontend/                  # Next.js frontend
+├── LICENSE                   # License file
+└── README.md                 # Project documentation
 
-## Architecture Overview
+Architecture Overview
 
-1. User uploads a legal PDF (e.g., contract, certificate, filing) from the frontend.
-2. The frontend sends the file to the backend endpoint /upload-pdf (multipart/form-data).
-3. The backend saves a temporary local copy, uploads it to a configured GCS bucket, and returns the GCS URI (e.g., gs://<bucket>/<filename>).  
-4. Downstream services (e.g., Vertex AI / Document AI) consume the URI to extract structure, summarize content, and enable grounded, citation-backed Q&A.
-5. The frontend displays summaries, extracted fields, and answers with references to sections/clauses.
+Upload: Users upload legal PDFs via the Next.js frontend.
+Backend Processing: The frontend sends the PDF to the Flask backend's /upload-pdf endpoint (multipart/form-data).
+Storage: The backend temporarily saves the PDF locally, uploads it to a GCS bucket, and returns a gs:// URI.
+AI Analysis: Downstream services (e.g., Document AI, Vertex AI) use the URI to summarize content, extract structured data, and enable grounded Q&A.
+Display: The frontend presents summaries, extracted fields, and Q&A with citations in a user-friendly interface.
 
----
+Prerequisites
 
-## Prerequisites
+Node.js: v18+ (for frontend)
+Python: v3.10+ (for backend)
+Google Cloud:
+A project with a GCS bucket for PDF storage.
+A Service Account with Storage write permissions (JSON key file).
+Optional: Document AI and Vertex AI enabled for AI processing.
 
-- Node.js 18+ (for the frontend)
-- Python 3.10+ (for the backend)
-- A Google Cloud project with:
-  - A GCS bucket to store uploaded PDFs.
-  - Service Account credentials with Storage write permissions.
-- gcloud CLI (optional but recommended)
-- Package managers:
-  - Frontend: npm/yarn/pnpm/bun
-  - Backend: pip/venv (or conda)
 
----
+gcloud CLI: Recommended for authentication and testing.
+Package Managers:
+Frontend: npm, yarn, pnpm, or bun.
+Backend: pip with virtualenv (or conda).
 
-## Backend (Flask) Setup
 
-Backend main file: backend/app.py
 
-### What it does
+Setup Instructions
+Backend (Flask)
 
-- Exposes POST /upload-pdf
-  - Accepts multipart/form-data with a single file field named file.
-  - Validates that the file is a PDF.
-  - Saves it to ./uploads/ temporarily.
-  - Uploads the file to the configured GCS bucket using google-cloud-storage.
-  - Responds with JSON containing "gcs_uri": "gs://<bucket>/<filename>".
-
-- CORS is enabled globally (via flask_cors.CORS(app)), allowing the frontend to call the backend during development.
-
-### Dependencies
-
-Install:
-
-pip install Flask flask-cors google-cloud-storage
-
-If you plan to run the example notebooks under backend/testings/, you may also need:
-
-pip install google-cloud-documentai prettytable pandas
-
-### Configuration
-
-In backend/app.py, set:
-- BUCKET_NAME — your GCS bucket
-- PROJECT_ID — your Google Cloud project
-
-Recommended: move these to environment variables and read via os.environ.
-
-Authenticate Google Cloud:
-- Create a Service Account with permissions to write to your bucket.
-- Download a JSON key and set:
-  - macOS/Linux:
-    export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account-key.json"
-  - Windows PowerShell:
-    setx GOOGLE_APPLICATION_CREDENTIALS "C:\path\to\service-account-key.json"
-
-### Run the backend
-
+Navigate to the backend directory:
 cd backend
+
+
+Create and activate a virtual environment:
 python -m venv .venv
 # macOS/Linux
 source .venv/bin/activate
 # Windows PowerShell
 .venv\Scripts\Activate.ps1
 
+
+Install dependencies:
 pip install --upgrade pip
 pip install Flask flask-cors google-cloud-storage
 
+For prototyping notebooks in backend/testings/:
+pip install google-cloud-documentai prettytable pandas
+
+
+Configure environment variables:
+
+Set your Google Cloud Project ID and GCS bucket name in backend/app.py or via environment variables:export BUCKET_NAME="your-gcs-bucket"
+export PROJECT_ID="your-project-id"
+
+
+Set the Service Account key path:# macOS/Linux
+export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account-key.json"
+# Windows PowerShell
+setx GOOGLE_APPLICATION_CREDENTIALS "C:\path\to\service-account-key.json"
+
+
+
+
+Run the backend:
 python app.py
 
-The server starts on http://127.0.0.1:5000.
+The server runs on http://127.0.0.1:5000.
 
-### API Reference
 
-- POST /upload-pdf
-  - Content-Type: multipart/form-data
-  - Form field:
-    - file: the PDF file to upload
-  - Responses:
-    - 200 OK: {"message": "File uploaded", "gcs_uri": "gs://<bucket>/<file>" }
-    - 400 Bad Request: error message
+Frontend (Next.js)
 
-Example:
-
-curl -X POST http://localhost:5000/upload-pdf \
-  -F "file=@/absolute/path/to/your.pdf"
-
----
-
-## Frontend (Next.js) Setup
-
+Navigate to the frontend directory:
 cd frontend
-# choose one package manager
+
+
+Install dependencies (choose one package manager):
 npm install
 # or: yarn install
 # or: pnpm install
 # or: bun install
 
+
+Run the development server:
 npm run dev
 # or: yarn dev
 # or: pnpm dev
 # or: bun dev
 
-Visit http://localhost:3000
+The frontend runs on http://localhost:3000.
 
-Integrate your upload UI to POST to http://localhost:5000/upload-pdf in development, or your deployed backend URL in production.
+Integrate with backend:
 
----
+Configure the frontend to send POST requests to http://localhost:5000/upload-pdf during development or your deployed backend URL in production.
 
-## End-to-End Legal Document Workflow
 
-1. Start the Flask backend and the Next.js frontend.
-2. Upload a legal PDF (contract, certificate, filing).
-3. Receive the gs:// URI from the backend.
-4. Use the URI with Document AI / Vertex AI to:
-   - Summarize the document.
-   - Extract key fields (parties, dates, amounts, obligations).
-   - Power grounded Q&A with citations (sections/clauses).
-5. Display results in the UI, with clear references and plain-language explanations.
 
----
+API Reference
 
-## Document AI Notebooks (Prototyping)
+POST /upload-pdf
+Content-Type: multipart/form-data
+Form Field: file (PDF file to upload)
+Responses:
+200 OK: {"message": "File uploaded", "gcs_uri": "gs://<bucket>/<filename>"}
+400 Bad Request: {"error": "Invalid file or missing PDF"}
 
-Under backend/testings/:
-- chatTest.ipynb — Upload to GCS and retrieve gs:// URI.
-- documentai-sync-v1.0.0.ipynb — Synchronous Document AI sample.
-- documentai-async-v1.0.0.ipynb — Asynchronous Document AI sample.
 
-These require valid authentication, a processor ID, and the listed Python packages.
+Example:curl -X POST http://localhost:5000/upload-pdf \
+  -F "file=@/path/to/your.pdf"
 
----
 
-## Deployment Notes
 
-- Backend:
-  - Consider Cloud Run, GKE, or a VM.
-  - Provide env vars (or Secret Manager) for bucket/project config.
-  - Use Workload Identity/Service Accounts for auth.
-  - Restrict CORS to trusted origins.
 
-- Frontend:
-  - Deploy on Vercel or other Next.js-compatible hosting.
-  - Configure the backend base URL for production.
 
----
+End-to-End Workflow
 
-## Security & Compliance
+Start the Flask backend (python app.py) and Next.js frontend (npm run dev).
+Upload a legal PDF (e.g., contract, filing) via the frontend.
+The backend returns a gs:// URI after storing the PDF in GCS.
+Use the URI with Google Cloud Document AI or Vertex AI to:
+Generate plain-language summaries.
+Extract structured data (parties, dates, amounts, etc.).
+Enable grounded Q&A with section/clause citations.
 
-- Do not commit service account keys.
-- Enforce least-privilege IAM on the bucket.
-- Validate file types and sizes.
-- Consider scanning for malicious content.
-- Ground all responses in the document; avoid legal advice.
 
----
+The frontend displays results with clear, clickable references.
 
-## License
+Prototyping Notebooks
+The backend/testings/ directory contains Jupyter notebooks for prototyping:
 
-See LICENSE.
+chatTest.ipynb: Uploads PDFs to GCS and retrieves gs:// URIs.
+documentai-sync-v1.0.0.ipynb: Synchronous Document AI processing.
+documentai-async-v1.0.0.ipynb: Asynchronous Document AI processing.
+
+Requirements: Valid Google Cloud authentication, a Document AI processor ID, and the dependencies listed above.
+Deployment
+Backend
+
+Options: Deploy on Google Cloud Run, GKE, or a VM.
+Configuration:
+Use environment variables or Google Secret Manager for BUCKET_NAME, PROJECT_ID, and credentials.
+Enable Workload Identity or Service Accounts for secure authentication.
+Restrict CORS to trusted origins (remove global flask_cors.CORS(app) in production).
+
+
+Security:
+Validate file types (PDF only) and enforce size limits.
+Scan uploads for malicious content.
+Use least-privilege IAM policies for the GCS bucket.
+
+
+
+Frontend
+
+Options: Deploy on Vercel, Netlify, or other Next.js-compatible platforms.
+Configuration:
+Set the backend base URL as an environment variable (e.g., NEXT_PUBLIC_API_URL).
+Optimize for production with npm run build.
+
+
+
+Security & Compliance
+
+Do not commit Service Account keys to version control.
+Validate file types and sizes on the backend.
+Enforce least-privilege IAM policies for GCS and AI services.
+Ground responses strictly in the document's content to avoid legal advice.
+Consider antivirus scanning for uploaded PDFs.
+
+Contributing
+We welcome contributions! To get started:
+
+Fork the repository.
+Create a feature branch (git checkout -b feature/your-feature).
+Commit changes (git commit -m "Add your feature").
+Push to the branch (git push origin feature/your-feature).
+Open a Pull Request with a clear description.
+
+Please follow the code of conduct and ensure tests pass before submitting.
+License
+See the LICENSE file for details.
