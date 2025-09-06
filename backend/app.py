@@ -48,7 +48,7 @@ def pdf_chat():
     file_path = data.get('gsUri')  # or use another key if your frontend sends a different name
 
     # Optionally, you can manage chat_history per session/user if needed
-    response = automated_chat(question, file_path=file_path, stream_response=False, chat_history=True)
+    response = automated_chat(question, file_path=file_path, stream_response=True, chat_history=None)
 
     return jsonify({"answer": response})
 

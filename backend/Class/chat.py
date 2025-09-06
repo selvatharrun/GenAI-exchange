@@ -279,4 +279,5 @@ def automated_chat(question, file_path=None, stream_response=False, chat_history
     else:
         response = generate_legal_advice(user_input, chat_history=chat_history, stream_response=False)
         chat_history.append({"role": "model", "content": response})
+
         return response
