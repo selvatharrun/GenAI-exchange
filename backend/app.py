@@ -9,7 +9,7 @@ CORS(app)
 
 BUCKET_NAME = "legal-doc-bucket1"
 PROJECT_ID = "sodium-coil-470706-f4"
-
+# hi
 def upload_blob_and_get_uri(bucket_name, source_file_name, destination_blob_name, project_id):
     storage_client = storage.Client(project=project_id)
     bucket = storage_client.bucket(bucket_name)
