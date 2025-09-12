@@ -565,18 +565,6 @@ function DocunoteContent() {
             {/* Q&A Tab */}
             <TabsContent value="q-and-a" className="flex-1 mt-0">
               <Card className="h-full border-0 shadow-lg rounded-xl overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-b py-4">
-                  <CardTitle className="flex items-center gap-2">
-                    <MessageCircleQuestion className="h-5 w-5 text-blue-600" />
-                    AI Q&A Chat
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                      Powered by AI
-                    </Badge>
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Ask questions about your PDF content and get intelligent answers
-                  </p>
-                </CardHeader>
                 <CardContent className="p-0 h-[calc(100vh-16rem)]">
                   <QnAChat gsUri={gsUri} pdfName={pdfFile?.name} />
                 </CardContent>

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, Copy, RefreshCw, MessageSquare, FileText, Bot, User, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface Message {
   id: string;
@@ -171,9 +172,12 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-blue-600" />
               <div>
-                <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+                 <h2 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 top-0">
                   PDF Q&A Chat
-                </h2>
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-0.5 text-xs">
+                      Powered by AI
+                    </Badge>
+                </h2> 
                 {pdfName && (
                   <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-48">
                     {pdfName}
