@@ -2,6 +2,7 @@ import base64
 import mimetypes
 import io
 import typing
+import requests
 from PIL import Image # For handling image data
 from google import genai
 from google.genai import types
@@ -222,6 +223,13 @@ def generate_legal_advice(
         system_instruction=[si_text1],
     )
 
+    # MCP tool call logic (add this before Gemini call)
+    if isinstance(user_message, str) and user_message.lower().startswith("what is"):
+        term = user_message.lower().replace("what is", "").strip("? .")
+        definition = call_mcp_tool("get_legal_term_definition", {"term": term})
+        if definition and "definition" in definition:
+            return definition["definition"]
+
     response_generator = client.models.generate_content_stream(
         model=model,
         contents=contents,
@@ -281,3 +289,11 @@ def automated_chat(question, file_path=None, stream_response=False, chat_history
         chat_history.append({"role": "model", "content": response})
 
         return response
+
+MCP_SERVER_URL = "http://localhost:8080"
+
+def call_mcp_tool(tool_name, params):
+    response = requests.post(f"{MCP_SERVER_URL}/tools/{tool_name}", json=params)
+    if response.status_code == 200:
+        return response.json()
+    return None
