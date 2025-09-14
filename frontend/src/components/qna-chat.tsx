@@ -164,9 +164,9 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
-      <div className="border-b bg-white dark:bg-gray-800 shadow-sm">
+    <div className="flex flex-col h-full min-h-0 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-10 border-b bg-white dark:bg-gray-800 shadow-sm">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
@@ -219,8 +219,8 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
         </div>
       </div>
 
-      {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Chat Messages - fill available space */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-8">
             <MessageSquare className="h-16 w-16 text-gray-300 dark:text-gray-600 mb-4" />
@@ -326,8 +326,8 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
         )}
       </div>
 
-      {/* Input Area */}
-      <div className="border-t bg-white dark:bg-gray-800 shadow-lg">
+      {/* Sticky Input Area */}
+      <div className="sticky bottom-0 z-10 border-t bg-white dark:bg-gray-800 shadow-lg">
         <div className="p-4">
           <div className="flex items-end gap-3">
             <div className="flex-1 relative">
