@@ -200,6 +200,6 @@ We welcome contributions! To get started:
 
 Please follow the [code of conduct](CODE_OF_CONDUCT.md) and ensure tests pass before submitting.
 
-## License
+## 📄 License
 
 See the [LICENSE](LICENSE) file for details.
