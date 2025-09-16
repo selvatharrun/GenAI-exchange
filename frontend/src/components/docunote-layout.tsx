@@ -196,35 +196,34 @@ function DocunoteContent() {
       formData.append('file', file);
       
       try {
-        const client = new MCPClient({ name: "Test", version: "1.0.0" });
+        // const client = new MCPClient({ name: "Test", version: "1.0.0" });
 
-        await client.connect({
-          type: "httpStream",
-          url: "http://localhost:8080/mcp"
-        });
+        // await client.connect({
+        //   type: "httpStream",
+        //   url: "http://localhost:8080/mcp"
+        // });
 
-        // Call the tool
-        const response = await client.callTool({
-          name: "upload_pdf_to_gcs",
-          arguments: {
-            file_path: `/uploads/${file.name}`, // or the actual path if you save it
-            filename: file.name
-          }
-        });
-        console.log(response);
-
-        // console.log(result);
-        // const response = await fetch('http://localhost:8080/upload_pdf_to_gcs', {
-        //   method: 'POST',
-        //   headers: {
-        //     'Content-Type': 'application/json',
-        //     'Accept': 'text/event-stream'
-        //   },
-        //   body: JSON.stringify({
+        // // Call the tool
+        // const result = await client.callTool({
+        //   name: "upload_pdf_to_gcs",
+        //   arguments: {
         //     file_path: `/uploads/${file.name}`, // or the actual path if you save it
         //     filename: file.name
-        //   })
+        //   }
         // });
+
+        // console.log(result);
+        const response = await fetch('http://localhost:8080/upload_pdf_to_gcs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'text/event-stream'
+          },
+          body: JSON.stringify({
+            file_path: `/uploads/${file.name}`, // or the actual path if you save it
+            filename: file.name
+          })
+        });
       
         const data = await response.json();
         
