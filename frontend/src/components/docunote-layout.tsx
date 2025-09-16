@@ -9,6 +9,7 @@ import {
   SidebarHeader,
   SidebarContent,
 } from "@/components/ui/sidebar";
+
 import { PdfViewer } from "../components/pdf-viewer";
 import {
   generateSummaryAction,
@@ -42,6 +43,7 @@ import { useSidebar } from "./ui/sidebar";
 import QnAChat from "@/components/qna-chat";
 import NotesTab from "@/components/notes-tab";
 import { Note } from "@/components/type";
+import { MCPClient } from "mcp-client";
 
 interface QnAItem {
   id: string;
@@ -121,9 +123,10 @@ function DocunoteContent() {
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        const response = await fetch('http://localhost:5000/health', { method: 'GET' });
+        const response = await fetch('http://localhost:8080/health', { method: 'GET' });
         setConnectionStatus(response.ok ? 'connected' : 'error');
-      } catch {
+        console.log(response);
+      } catch {  
         setConnectionStatus('error');
       }
     };
@@ -132,6 +135,8 @@ function DocunoteContent() {
     const interval = setInterval(checkConnection, 30000); // Check every 30 seconds
     return () => clearInterval(interval);
   }, []);
+
+
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -191,11 +196,36 @@ function DocunoteContent() {
       formData.append('file', file);
       
       try {
-        const response = await fetch('http://localhost:5000/upload-pdf', {
-          method: 'POST',
-          body: formData,
-        });    
-        
+        const client = new MCPClient({ name: "Test", version: "1.0.0" });
+
+        await client.connect({
+          type: "httpStream",
+          url: "http://localhost:8080/mcp"
+        });
+
+        // Call the tool
+        const response = await client.callTool({
+          name: "upload_pdf_to_gcs",
+          arguments: {
+            file_path: `/uploads/${file.name}`, // or the actual path if you save it
+            filename: file.name
+          }
+        });
+        console.log(response);
+
+        // console.log(result);
+        // const response = await fetch('http://localhost:8080/upload_pdf_to_gcs', {
+        //   method: 'POST',
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //     'Accept': 'text/event-stream'
+        //   },
+        //   body: JSON.stringify({
+        //     file_path: `/uploads/${file.name}`, // or the actual path if you save it
+        //     filename: file.name
+        //   })
+        // });
+      
         const data = await response.json();
         
         if (response.ok && data.gcs_uri) {
@@ -233,6 +263,7 @@ function DocunoteContent() {
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
+
 
   const handleDeletePdf = () => {
     // Save current session notes before deleting

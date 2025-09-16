@@ -1,5 +1,8 @@
 "use client";
 
+//if u are planning to use the flask app, change all routing url to 
+//"http://localhost:5000/check the function in app.py"
+
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, Copy, RefreshCw, MessageSquare, FileText, Bot, User, X } from "lucide-react";
@@ -44,7 +47,7 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        const res = await fetch("http://localhost:5000/health", { method: "GET" });
+        const res = await fetch("http://localhost:8080/health", { method: "GET" });
         setConnectionStatus(res.ok ? 'connected' : 'error');
       } catch {
         setConnectionStatus('error');
@@ -65,7 +68,7 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
     setIsLoading(true);
     
     try {
-      const res = await fetch("http://localhost:5000/pdf-chat", {
+      const res = await fetch("http://localhost:8080/query-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -116,7 +119,7 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
     setIsLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/pdf-chat", {
+      const res = await fetch("http://localhost:8080/query_pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
