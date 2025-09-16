@@ -23,7 +23,7 @@ GenAI-exchange/
 │   ├── app.py                # Main Flask app with /upload-pdf endpoint
 │   ├── testings/             # Prototyping notebooks for GCS and Document AI
 │   │   ├── chatTest.ipynb
-│   ├── mcp-on-cloudrun/      # Example microservice for AI tool-use on Cloud Run
+│   ├── mcp_on_cloudrun/      # Example microservice for AI tool-use on Cloud Run
 │   │   └── server.py
 │   │   ├── documentai-sync-v1.0.0.ipynb
 │   │   └── documentai-async-v1.0.0.ipynb

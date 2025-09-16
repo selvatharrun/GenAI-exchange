@@ -574,7 +574,7 @@ function DocunoteContent() {
             
             {/* PDF Viewer Tab */}
             <TabsContent value="pdf-viewer" className="flex-1 mt-0">
-              <Card className="h-full border-0 shadow-lg rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+              {/* <Card className="h-full border-0 shadow-lg rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800"> */}
                 <PdfViewer 
                   fileUrl={pdfDataUrl} 
                   fileName={pdfFile?.name}
@@ -582,7 +582,7 @@ function DocunoteContent() {
                   onSaveNote={handleSaveNote}
                   isAnalyzing={isSelectionSummaryLoading}
                 />
-              </Card>
+              {/* </Card> */}
             </TabsContent>
 
             {/* Notes Tab */}
@@ -595,11 +595,11 @@ function DocunoteContent() {
 
             {/* Q&A Tab */}
             <TabsContent value="q-and-a" className="flex-1 mt-0">
-              <Card className="h-full border-0 shadow-lg rounded-xl overflow-hidden">
-                <CardContent className="p-0 h-[calc(100vh-16rem)]">
+              {/* <Card className="h-full border-0 shadow-lg rounded-xl overflow-hidden">
+                <CardContent className="p-0 h-[calc(100vh-16rem)]"> */}
                   <QnAChat gsUri={gsUri} pdfName={pdfFile?.name} />
-                </CardContent>
-              </Card>
+                {/* </CardContent>
+              </Card> */}
             </TabsContent>
 
             {/* New Summary Tab */}
