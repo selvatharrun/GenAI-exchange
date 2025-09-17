@@ -141,7 +141,7 @@ GenAI-exchange/
 
 ## 🔄 End-to-End Workflow
 
-1. Start the Flask backend (`python app.py`) and Next.js frontend (`npm run dev`).
+1. Start the mcp server (`python mcp_app.py`) and Next.js frontend (`npm run dev`).
 2. Upload a legal PDF (e.g., contract, filing) via the frontend.
 3. The backend returns a `gs://` URI after storing the PDF in GCS.
 4. Use the URI with Google Cloud Document AI or Vertex AI to:
