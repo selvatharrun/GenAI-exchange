@@ -1,4 +1,4 @@
-# GenAI-exchange
+# 🚀 GenAI-exchange
 
 **GenAI-exchange** is a full-stack application designed to simplify the understanding of legal documents for both lawyers and non-lawyers. It processes contracts, filings, and other legal PDFs to deliver:
 
@@ -8,14 +8,14 @@
 - **Ambiguity detection** to flag areas for professional review.
 - **Neutral, factual outputs**, avoiding legal advice.
 
-## Features
+## ✨ Features
 
 - **Frontend**: A Next.js application for intuitive document uploads and interactive result exploration.
 - **Backend**: A Flask server that handles PDF uploads, stores them in Google Cloud Storage (GCS), and returns `gs://` URIs for downstream AI processing (e.g., Google Cloud Document AI, Vertex AI).
 - **AI Integration**: Leverages Google Cloud services for document summarization, data extraction, and citation-backed Q&A.
 - **Security**: Validates file types, enforces least-privilege IAM, and supports secure deployment practices.
 
-## Project Structure
+## 🏗️ Project Structure
 
 ```
 GenAI-exchange/
@@ -32,7 +32,7 @@ GenAI-exchange/
 └── README.md                 # Project documentation
 ```
 
-## Architecture Overview
+## 🔄 Architecture Overview
 
 1. **Upload**: Users upload legal PDFs via the Next.js frontend.
 2. **Backend Processing**: The frontend sends the PDF to the Flask backend's `/upload-pdf` endpoint (multipart/form-data).
@@ -53,7 +53,7 @@ GenAI-exchange/
   - Frontend: npm, yarn, pnpm, or bun.
   - Backend: pip with virtualenv (or conda).
 
-## Setup Instructions
+## ⚙️ Setup Instructions
 
 ### Backend (Flask)
 
@@ -128,7 +128,7 @@ GenAI-exchange/
 4. **Integrate with backend**:
    - Configure the frontend to send POST requests to `http://localhost:5000/upload-pdf` during development or your deployed backend URL in production.
 
-### API Reference
+### 🔎 API Reference
 
 - **POST /upload-pdf**
   - **Content-Type**: `multipart/form-data`
@@ -142,7 +142,7 @@ GenAI-exchange/
       -F "file=@/path/to/your.pdf"
     ```
 
-## End-to-End Workflow
+## 🔄 End-to-End Workflow
 
 1. Start the Flask backend (`python app.py`) and Next.js frontend (`npm run dev`).
 2. Upload a legal PDF (e.g., contract, filing) via the frontend.
@@ -153,7 +153,7 @@ GenAI-exchange/
    - Enable grounded Q&A with section/clause citations.
 5. The frontend displays results with clear, clickable references.
 
-## Prototyping Notebooks
+## 📓 Prototyping Notebooks
 
 The `backend/testings/` directory contains Jupyter notebooks for prototyping:
 - `chatTest.ipynb`: Uploads PDFs to GCS and retrieves `gs://` URIs.
@@ -162,7 +162,7 @@ The `backend/testings/` directory contains Jupyter notebooks for prototyping:
 
 **Requirements**: Valid Google Cloud authentication, a Document AI processor ID, and the dependencies listed above.
 
-## Deployment
+## 🚀 Deployment
 
 ### Backend
 - **Options**: Deploy on Google Cloud Run, GKE, or a VM.
@@ -181,7 +181,7 @@ The `backend/testings/` directory contains Jupyter notebooks for prototyping:
   - Set the backend base URL as an environment variable (e.g., `NEXT_PUBLIC_API_URL`).
   - Optimize for production with `npm run build`.
 
-## Security & Compliance
+## 🔒 Security & Compliance
 
 - **Do not commit** Service Account keys to version control.
 - **Validate** file types and sizes on the backend.
@@ -189,7 +189,7 @@ The `backend/testings/` directory contains Jupyter notebooks for prototyping:
 - **Ground responses** strictly in the document's content to avoid legal advice.
 - **Consider** antivirus scanning for uploaded PDFs.
 
-## Contributing
+## 🤝 Contributing
 
 We welcome contributions! To get started:
 1. Fork the repository.
@@ -200,6 +200,6 @@ We welcome contributions! To get started:
 
 Please follow the [code of conduct](CODE_OF_CONDUCT.md) and ensure tests pass before submitting.
 
-## License
+## 📄 License
 
 See the [LICENSE](LICENSE) file for details.
