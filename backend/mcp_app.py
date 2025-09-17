@@ -26,7 +26,7 @@ def upload_blob_and_get_uri(bucket_name, source_file_name, destination_blob_name
 # Tool to upload PDF to GCS
 @mcp.tool
 def upload_pdf_to_gcs(file_path: str, filename: str) -> dict:
-    """Uploads a PDF file to Google Cloud Storage and returns the GCS URI."""
+    """Uploads a PDF file and returns the GCS URI."""
     if not filename.lower().endswith('.pdf'):
         return {"error": "Invalid file type"}
     
