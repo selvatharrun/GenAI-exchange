@@ -21,12 +21,9 @@
 GenAI-exchange/
 ├── backend/                   # Flask backend
 │   ├── app.py                # Main Flask app with /upload-pdf endpoint
+|   ├── mcp_app.py           
 │   ├── testings/             # Prototyping notebooks for GCS and Document AI
 │   │   ├── chatTest.ipynb
-│   ├── mcp_on_cloudrun/      # Example microservice for AI tool-use on Cloud Run
-│   │   └── server.py
-│   │   ├── documentai-sync-v1.0.0.ipynb
-│   │   └── documentai-async-v1.0.0.ipynb
 ├── frontend/                  # Next.js frontend
 ├── LICENSE                   # License file
 └── README.md                 # Project documentation
@@ -97,9 +94,9 @@ GenAI-exchange/
 
 5. **Run the backend**:
    ```bash
-   python app.py
+   python mcp_app.py
    ```
-   The server runs on `http://127.0.0.1:5000`.
+   The server runs on `http://0.0.0.0:8080`.
 
 ### Frontend (Next.js)
 
