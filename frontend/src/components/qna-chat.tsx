@@ -1,12 +1,10 @@
 "use client";
 
-//if u are planning to use the flask app, change all routing url to 
-//"http://localhost:5000/check the function in app.py"
-
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, Copy, RefreshCw, MessageSquare, FileText, Bot, User, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { MCPService, useMCPClient } from "@/lib/mcp-client";
 
 interface Message {
   id: string;
@@ -26,73 +24,112 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'error' | 'checking'>('checking');
+  const [isMounted, setIsMounted] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const mcpClient = useMCPClient();
+
+  // Handle Next.js hydration
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Auto-scroll chat to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading]);
+    if (isMounted) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isLoading, isMounted]);
 
   // Auto-resize textarea
   useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    if (isMounted) {
+      const textarea = textareaRef.current;
+      if (textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+      }
     }
-  }, [input]);
+  }, [input, isMounted]);
 
-  // Check backend connection on mount
+  // Initialize MCP connection and check status
   useEffect(() => {
-    const checkConnection = async () => {
+    if (!isMounted) return;
+
+    const initializeConnection = async () => {
+      setConnectionStatus('checking');
+      
       try {
-        const res = await fetch("http://localhost:8080/health", { method: "GET" });
-        setConnectionStatus(res.ok ? 'connected' : 'error');
-      } catch {
+        const connected = await MCPService.connect();
+        if (connected) {
+          const isHealthy = await MCPService.checkHealth();
+          setConnectionStatus(isHealthy ? 'connected' : 'error');
+        } else {
+          setConnectionStatus('error');
+        }
+      } catch (error) {
+        console.error('Failed to initialize MCP connection:', error);
         setConnectionStatus('error');
       }
     };
-    
-    checkConnection();
-  }, []);
+
+    initializeConnection();
+
+    // Set up periodic health checks
+    const healthCheckInterval = setInterval(async () => {
+      try {
+        const isHealthy = await MCPService.checkHealth();
+        setConnectionStatus(isHealthy ? 'connected' : 'error');
+      } catch {
+        setConnectionStatus('error');
+      }
+    }, 30000); // Check every 30 seconds
+
+    return () => {
+      clearInterval(healthCheckInterval);
+    };
+  }, [isMounted]);
 
   // Generate unique message ID
   const generateMessageId = () => Math.random().toString(36).substring(2, 15);
 
-  const copyToClipboard = useCallback((text: string) => {
-    navigator.clipboard.writeText(text);
-  }, []);
+  const copyToClipboard = useCallback(async (text: string) => {
+    if (!isMounted) return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+    }
+  }, [isMounted]);
 
   const retryMessage = useCallback(async (messageText: string) => {
+    if (!gsUri || !isMounted) return;
+    
     setIsLoading(true);
     
     try {
-      const res = await fetch("http://localhost:8080/query-pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: messageText,
-          gsUri,
-        }),
-      });
-
-      const data = await res.json();
-      const aiMessage: Message = { 
-        id: generateMessageId(),
-        sender: "ai", 
-        text: data.answer || "No response received.", 
-        timestamp: new Date(),
-        isError: !data.answer
-      };
-
-      setMessages(prev => [...prev, aiMessage]);
-      setConnectionStatus('connected');
+      const result = await MCPService.askQuestion(messageText, gsUri);
+      
+      if (result.success) {
+        const aiMessage: Message = { 
+          id: generateMessageId(),
+          sender: "ai", 
+          text: result.answer || "No response received.", 
+          timestamp: new Date(),
+          isError: false
+        };
+        setMessages(prev => [...prev, aiMessage]);
+        setConnectionStatus('connected');
+      } else {
+        throw new Error(result.error || 'Unknown error');
+      }
     } catch (error) {
       const errorMessage: Message = {
         id: generateMessageId(),
         sender: "ai",
-        text: "⚠️ Failed to fetch response. Please check if the backend is running.",
+        text: `⚠️ Failed to fetch response: ${error instanceof Error ? error.message : 'Unknown error'}`,
         timestamp: new Date(),
         isError: true
       };
@@ -101,10 +138,10 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [gsUri]);
+  }, [gsUri, isMounted]);
 
   const handleSendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || !gsUri || !isMounted) return;
 
     const userMessage: Message = { 
       id: generateMessageId(),
@@ -119,35 +156,26 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
     setIsLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8080/query_pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: messageText,
-          gsUri,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+      const result = await MCPService.askQuestion(messageText, gsUri);
+      
+      if (result.success) {
+        const aiMessage: Message = { 
+          id: generateMessageId(),
+          sender: "ai", 
+          text: result.answer || "No response received.", 
+          timestamp: new Date(),
+          isError: false
+        };
+        setMessages(prev => [...prev, aiMessage]);
+        setConnectionStatus('connected');
+      } else {
+        throw new Error(result.error || 'Unknown error');
       }
-
-      const data = await res.json();
-      const aiMessage: Message = { 
-        id: generateMessageId(),
-        sender: "ai", 
-        text: data.answer || "No response received.", 
-        timestamp: new Date(),
-        isError: !data.answer
-      };
-
-      setMessages(prev => [...prev, aiMessage]);
-      setConnectionStatus('connected');
     } catch (error) {
       const errorMessage: Message = {
         id: generateMessageId(),
         sender: "ai",
-        text: "⚠️ Failed to fetch response. Please check if the backend is running.",
+        text: `⚠️ Failed to fetch response: ${error instanceof Error ? error.message : 'Unknown error'}`,
         timestamp: new Date(),
         isError: true
       };
@@ -166,6 +194,18 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Show loading state during Next.js hydration
+  if (!isMounted) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <p className="text-sm text-gray-500">Loading chat...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full min-h-0 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
       {/* Sticky Header */}
@@ -178,7 +218,7 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
                  <h2 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 top-0">
                   PDF Q&A Chat
                     <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-0.5 text-xs">
-                      Powered by AI
+                      MCP Powered
                     </Badge>
                 </h2> 
                 {pdfName && (
@@ -203,8 +243,8 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
                 connectionStatus === 'connected' ? 'bg-green-500' : 
                 connectionStatus === 'error' ? 'bg-red-500' : 'bg-yellow-500'
               }`} />
-              {connectionStatus === 'connected' ? 'Connected' : 
-               connectionStatus === 'error' ? 'Disconnected' : 'Checking...'}
+              {connectionStatus === 'connected' ? 'MCP Connected' : 
+               connectionStatus === 'error' ? 'MCP Disconnected' : 'Connecting...'}
             </div>
             
             {messages.length > 0 && (
@@ -222,7 +262,7 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
         </div>
       </div>
 
-      {/* Chat Messages - fill available space */}
+      {/* Chat Messages */}
       <div className="flex-1 min-h-0 overflow-y-auto">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-8">
@@ -231,11 +271,16 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
               Ready to answer your questions
             </h3>
             <p className="text-gray-500 dark:text-gray-400 max-w-md">
-              Ask me anything about your PDF document. I'll analyze the content and provide detailed answers.
+              Ask me anything about your PDF document. I'll analyze the content using MCP and provide detailed answers.
             </p>
             {!gsUri && (
               <p className="text-amber-600 dark:text-amber-400 text-sm mt-4">
                 ⚠️ No PDF loaded. Please upload a document first.
+              </p>
+            )}
+            {connectionStatus === 'error' && (
+              <p className="text-red-600 dark:text-red-400 text-sm mt-2">
+                ⚠️ MCP connection error. Please ensure your MCP server is running.
               </p>
             )}
           </div>
@@ -318,7 +363,7 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
                       <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                       <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
-                    <span className="text-sm">Thinking...</span>
+                    <span className="text-sm">Processing with MCP...</span>
                   </div>
                 </div>
               </div>
@@ -339,7 +384,7 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 placeholder={gsUri ? "Ask a question about the PDF..." : "Please upload a PDF first..."}
-                disabled={!gsUri || isLoading}
+                disabled={!gsUri || isLoading || connectionStatus !== 'connected'}
                 rows={1}
                 className="w-full resize-none rounded-xl border border-gray-300 dark:border-gray-600 px-4 py-3 pr-12 bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 onKeyDown={e => {
@@ -361,7 +406,7 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
             <Button 
               type="button" 
               onClick={handleSendMessage}
-              disabled={!input.trim() || isLoading || !gsUri}
+              disabled={!input.trim() || isLoading || !gsUri || connectionStatus !== 'connected'}
               size="lg"
               className="h-12 w-12 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
@@ -375,7 +420,7 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
           
           {connectionStatus === 'error' && (
             <div className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
-              <span>⚠️ Backend connection error. Please ensure your server is running on port 5000.</span>
+              <span>⚠️ MCP connection error. Please ensure your MCP server is running and accessible.</span>
             </div>
           )}
         </div>
