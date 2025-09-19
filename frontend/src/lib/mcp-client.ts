@@ -18,7 +18,6 @@ class MCPClientManager {
 
   constructor(config: MCPClientConfig = {}) {
     this.config = {
-      // Use MCP HTTP endpoint mounted at /mcp; trailing slash avoids redirects
       serverUrl: config.serverUrl || process.env.NEXT_PUBLIC_MCP_SERVER_URL || 'http://localhost:8080/mcp/',
       timeout: config.timeout || 30000,
       retries: config.retries || 3,
@@ -103,6 +102,7 @@ class MCPClientManager {
 
   async callTool(toolName: string, parameters: any): Promise<any> {
     if (!this.client || !this.isConnected) {
+      console.log(` Tool ${toolName}: Reconnecting...`);
       const connected = await this.connect();
       if (!connected) {
         throw new Error('MCP client is not connected and failed to reconnect');
@@ -110,13 +110,14 @@ class MCPClientManager {
     }
 
     try {
+      console.log(` Calling tool: ${toolName}`, parameters);
       const result = await this.client!.callTool({
         name: toolName,
         arguments: parameters,
       });
+      console.log(` Tool ${toolName} result:`, result);
       return result;
     } catch (error) {
-      console.error(`Error calling tool ${toolName}:`, error);
       this.isConnected = false;
       throw error;
     }
@@ -124,12 +125,37 @@ class MCPClientManager {
 
   async askQuestion(question: string, gsUri?: string): Promise<string> {
     try {
-      const result = await this.callTool('query_pdf', {
+      const result = await this.callTool('pdf_qa', {
         question,
-        gs_uri: gsUri,
+        gsUri,
       });
 
-      return result.answer || result.content || result.response || 'No response received';
+      console.log('Q&A result:', result);
+
+      // Try direct properties first
+      let answer = result.answer || result.response;
+      
+      // If not found, check content array (MCP format)
+      if (!answer && result.content && Array.isArray(result.content)) {
+        console.log(' Checking content array:', result.content);
+        for (const item of result.content) {
+          if (typeof item === 'string') {
+            answer = item;
+            break;
+          } else if (item && typeof item === 'object') {
+            // Handle {type: "text", text: "..."} format
+            answer = item.text || item.answer || item.content;
+            if (answer) break;
+          }
+        }
+      }
+      
+      // Check structuredContent as fallback
+      if (!answer && result.structuredContent) {
+        answer = result.structuredContent.answer || result.structuredContent.text;
+      }
+
+      return answer || 'No response received';
     } catch (error) {
       console.error('Error asking question:', error);
       throw error;
@@ -138,14 +164,34 @@ class MCPClientManager {
 
   async uploadPdfToGCS(filename: string, fileData: string | Blob): Promise<string> {
     try {
-      // Backend accepts base64 file_data or server-side file_path; send base64
-      const result = await this.callTool('upload_pdf_to_gcs', {
+      
+      const result = await this.callTool('upload_pdf', {
         filename,
-        file_data: fileData,
+        file_data: fileData, // Base64 string or blob
       });
-      return result.gcs_uri || result.uri || result.url;
+
+      // MCP tool results have different structure - check content array
+      let uri = result.gcs_uri || result.uri || result.url;
+      
+      // If not found, check in content array or structuredContent
+      if (!uri && result.content && result.content.length > 0) {
+        const content = result.content[0];
+        uri = content.gcs_uri || content.uri || content.url;
+      }
+      
+      // Check structuredContent if still not found
+      if (!uri && result.structuredContent) {
+        uri = result.structuredContent.gcs_uri || result.structuredContent.uri || result.structuredContent.url;
+      }
+      
+      
+      if (!uri) {
+        throw new Error('No URI returned from upload_pdf tool');
+      }
+      
+      return uri;
     } catch (error) {
-      console.error('Error uploading PDF:', error);
+
       throw error;
     }
   }
@@ -155,13 +201,19 @@ class MCPClientManager {
       if (!this.client || !this.isConnected) {
         const connected = await this.connect();
         if (!connected) {
+          console.log('Health check: Connection failed');
           return false;
         }
       }
 
       // Try to list available tools as a health check
-      const tools = await this.client!.listTools();
-      return Array.isArray(tools) && tools.length > 0;
+      console.log('Health check: Listing tools...');
+      const result = await this.client!.listTools({});
+      console.log('Health check: Tools result:', result);
+      
+      const isHealthy = result && result.tools && Array.isArray(result.tools) && result.tools.length > 0;
+      console.log('Health check: Is healthy?', isHealthy);
+      return isHealthy;
     } catch (error) {
       console.error('Health check failed:', error);
       this.isConnected = false;
@@ -286,4 +338,3 @@ export const MCPService = {
     await client.disconnect();
   },
 };
-
