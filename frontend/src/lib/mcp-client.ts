@@ -1,6 +1,6 @@
 // lib/mcp-client.ts - Next.js optimized version
 
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { Client } from '@modelcontextprotocol/sdk/client';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
 export interface MCPClientConfig {
@@ -51,7 +51,18 @@ class MCPClientManager {
         version: '1.0.0',
       });
 
-      this.transport = new StreamableHTTPClientTransport(new URL(this.config.serverUrl!));
+      this.transport = new StreamableHTTPClientTransport(
+        new URL(this.config.serverUrl!),
+        {
+          requestInit: { 
+            credentials: 'include',
+            headers: {
+              'Accept': 'application/json, text/event-stream',
+              'Content-Type': 'application/json'
+            }
+          }
+        }
+      );
 
       // Connect client to transport, which handles initialization
       await this.client.connect(this.transport);
@@ -224,7 +235,7 @@ export const MCPService = {
       });
       
       const gsUri = await client.uploadPdfToGCS(file.name, base64Data);
-
+      
       return {
         success: true,
         gsUri,

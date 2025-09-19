@@ -67,13 +67,21 @@ mcp_app = mcp.http_app(path="/")
 
 app = FastAPI(lifespan=mcp_app.lifespan)
 
-# Add CORS middleware
+# ---- CORS ----
+allowed_origins = [
+    os.getenv("FRONTEND_ORIGIN", "http://localhost:3000"),
+    "http://127.0.0.1:3000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # remove wildcard to allow credentials
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=[
+        "mcp-session-id", "MCP-Session-Id", "MCP-Protocol-Version", "Access-Control-Expose-Headers",
+    ],
 )
 
 @app.get("/health")
