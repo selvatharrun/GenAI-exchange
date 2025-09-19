@@ -77,7 +77,7 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
 
     initializeConnection();
 
-    // Set up periodic health checks
+    // Set up periodic health checksmc
     const healthCheckInterval = setInterval(async () => {
       try {
         const isHealthy = await MCPService.checkHealth();

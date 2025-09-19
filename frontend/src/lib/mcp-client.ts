@@ -1,6 +1,6 @@
 // lib/mcp-client.ts - Next.js optimized version
 
-import { Client } from '@modelcontextprotocol/sdk/client';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
 export interface MCPClientConfig {
@@ -18,7 +18,8 @@ class MCPClientManager {
 
   constructor(config: MCPClientConfig = {}) {
     this.config = {
-      serverUrl: config.serverUrl || process.env.NEXT_PUBLIC_MCP_SERVER_URL || 'http://localhost:8080/mcp',
+      // Use MCP HTTP endpoint mounted at /mcp; trailing slash avoids redirects
+      serverUrl: config.serverUrl || process.env.NEXT_PUBLIC_MCP_SERVER_URL || 'http://localhost:8080/mcp/',
       timeout: config.timeout || 30000,
       retries: config.retries || 3,
     };
@@ -112,9 +113,9 @@ class MCPClientManager {
 
   async askQuestion(question: string, gsUri?: string): Promise<string> {
     try {
-      const result = await this.callTool('pdf_qa', {
+      const result = await this.callTool('query_pdf', {
         question,
-        gsUri,
+        gs_uri: gsUri,
       });
 
       return result.answer || result.content || result.response || 'No response received';
@@ -126,11 +127,11 @@ class MCPClientManager {
 
   async uploadPdfToGCS(filename: string, fileData: string | Blob): Promise<string> {
     try {
-      const result = await this.callTool('upload_pdf', {
+      // Backend accepts base64 file_data or server-side file_path; send base64
+      const result = await this.callTool('upload_pdf_to_gcs', {
         filename,
-        file_data: fileData, // Base64 string or blob
+        file_data: fileData,
       });
-
       return result.gcs_uri || result.uri || result.url;
     } catch (error) {
       console.error('Error uploading PDF:', error);
@@ -223,7 +224,7 @@ export const MCPService = {
       });
       
       const gsUri = await client.uploadPdfToGCS(file.name, base64Data);
-      
+
       return {
         success: true,
         gsUri,
@@ -274,3 +275,4 @@ export const MCPService = {
     await client.disconnect();
   },
 };
+
