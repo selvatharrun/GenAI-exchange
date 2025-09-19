@@ -98,7 +98,6 @@ if mcp:
             
             logger.info(f"PDF saved locally: {local_path}")
 
-           
             try:
                 bucket = bucket_name or os.getenv("BUCKET_NAME") or "legal-doc-bucket1"
                 project = os.getenv("PROJECT_ID") or "sodium-coil-470706-f4"
@@ -107,8 +106,8 @@ if mcp:
                 return {"message": "File uploaded to GCS", "gcs_uri": gcs_uri}
             except Exception as gcs_error:
                 logger.warning(f"GCS upload failed, using local file: {gcs_error}")
-            
-            
+                # Fallback for local-only mode if GCS fails
+                return {"message": "File saved locally", "local_path": local_path}
             
         except Exception as e:
             logger.exception("upload_pdf failed")
@@ -116,6 +115,9 @@ if mcp:
 
     @mcp.tool
     def pdf_qa(question: str, gsUri: str = None) -> dict:
+        """
+        Processes a question about a PDF and ensures the response is a dictionary.
+        """
         try:
             logger.info(f"pdf_qa called with question: {question[:100]}... gsUri: {gsUri}")
             if not question:
@@ -123,16 +125,22 @@ if mcp:
             
             result = automated_chat(question, file_path=gsUri, stream_response=True, chat_history=None)
             
-            # Extract text if result is a complex object
+            # --- FIX IS HERE ---
+            # Ensure the final output is always a dictionary.
             if isinstance(result, dict):
-                answer = result.get('response') or result.get('answer') or result.get('text') or str(result)
+                # If the result is already a dict, ensure it has the 'answer' key for consistency
+                if 'answer' in result:
+                    return result
+                # Try to find a common response key, otherwise convert the whole dict to a string
+                raw_answer = result.get('response') or result.get('text') or str(result)
+                return {"answer": raw_answer}
             elif isinstance(result, str):
-                answer = result
+                # If the result is a string, wrap it in a dictionary
+                return {"answer": result}
             else:
-                answer = str(result)
+                # For any other data type, convert to string and wrap
+                return {"answer": str(result)}
                 
-            logger.info(f"Final answer: {answer}")
-            return answer
         except Exception as e:
             logger.exception("pdf_qa failed")
             return {"error": str(e)}
