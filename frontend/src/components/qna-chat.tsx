@@ -218,7 +218,7 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
                  <h2 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 top-0">
                   PDF Q&A Chat
                     <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-0.5 text-xs">
-                      MCP Powered
+                      AI Powered
                     </Badge>
                 </h2> 
                 {pdfName && (
@@ -243,7 +243,7 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
                 connectionStatus === 'connected' ? 'bg-green-500' : 
                 connectionStatus === 'error' ? 'bg-red-500' : 'bg-yellow-500'
               }`} />
-              {connectionStatus === 'connected' ? 'MCP Connected' : 
+              {connectionStatus === 'connected' ? 'MCP Server Connected' : 
                connectionStatus === 'error' ? 'MCP Disconnected' : 'Connecting...'}
             </div>
             

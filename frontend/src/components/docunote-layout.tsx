@@ -352,7 +352,7 @@ function DocunoteContent() {
               connectionStatus === 'connected' ? 'bg-green-500' : 
               connectionStatus === 'error' ? 'bg-red-500' : 'bg-yellow-500'
             }`} />
-            {connectionStatus === 'connected' ? 'MCP Connected' : 
+            {connectionStatus === 'connected' ? 'MCP Server Connected' : 
               connectionStatus === 'error' ? 'MCP Offline' : 'Connecting to MCP...'}
           </div>
         </div>
