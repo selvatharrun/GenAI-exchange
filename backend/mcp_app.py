@@ -33,6 +33,14 @@ except Exception:
     def automated_chat(question: str, file_path: str = None, stream_response: bool = False, chat_history=None):
         return {"stub": True, "question": question, "file_path": file_path}
 
+try:
+    from Class.OCR import process_pdf_with_document_ai
+except Exception:
+    logger.warning("OCR import failed, using stub")
+
+    def process_pdf_with_document_ai(gcs_uri: str):
+        return {"success": False, "error": "OCR module not available", "full_text": "", "pages": [], "form_fields": [], "confidence_score": None}
+
 # ---- MCP Setup ----
 MCP_NAME = os.getenv("MCP_NAME", "LegalDemystifierMCP")
 mcp = FastMCP(MCP_NAME) if FastMCP else None
@@ -143,6 +151,49 @@ if mcp:
                 
         except Exception as e:
             logger.exception("pdf_qa failed")
+            return {"error": str(e)}
+
+    @mcp.tool
+    def extract_text_from_pdf(gcs_uri: str) -> dict:
+        """
+        Extract text from a PDF document stored in Google Cloud Storage using Document AI.
+        Returns structured text data with page-wise breakdown and form fields.
+        
+        Args:
+            gcs_uri: The GCS URI of the PDF file (e.g., 'gs://bucket-name/file.pdf')
+            
+        Returns:
+            dict: Contains extracted text, page details, form fields, and confidence score
+        """
+        try:
+            logger.info(f"extract_text_from_pdf called with gcs_uri: {gcs_uri}")
+            
+            if not gcs_uri:
+                return {"error": "gcs_uri required"}
+            
+            if not gcs_uri.startswith("gs://"):
+                return {"error": "Invalid GCS URI format. Must start with 'gs://'"}
+            
+            # Process the PDF using Document AI
+            result = process_pdf_with_document_ai(gcs_uri)
+            
+            if result["success"]:
+                logger.info(f"OCR processing successful. Extracted {len(result['full_text'])} characters from {len(result['pages'])} pages")
+                return {
+                    "success": True,
+                    "full_text": result["full_text"],
+                    "pages": result["pages"],
+                    "form_fields": result["form_fields"],
+                    "confidence_score": result["confidence_score"],
+                    "total_pages": len(result["pages"]),
+                    "total_characters": len(result["full_text"])
+                }
+            else:
+                logger.error(f"OCR processing failed: {result['error']}")
+                return {"error": result["error"]}
+                
+        except Exception as e:
+            logger.exception("extract_text_from_pdf failed")
             return {"error": str(e)}
 
 # ---- Debug Middleware ----

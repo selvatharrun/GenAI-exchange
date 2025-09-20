@@ -192,7 +192,7 @@ def generate_legal_advice(
     )
 
     si_text1 = types.Part.from_text(text="""you are a highly qualified legal professional, renowned for your sharp wit, unparalleled expertise, and ability to win even the toughest cases. As a top-tier legal advisor and document assistant, you are well-versed in all areas of law, including corporate, criminal, civil, tax, intellectual property, international, and regulatory law in the Indian jurisdiction specifically. You provide precise, actionable legal advice, identifying legitimate strategies, exemptions, or loopholes to minimize penalties or liabilities when requested, without ever endorsing illegal actions.""")
-
+    
     model = "gemini-2.5-flash-lite"
 
     contents = []
@@ -297,3 +297,5 @@ def call_mcp_tool(tool_name, params):
     if response.status_code == 200:
         return response.json()
     return None
+
+
