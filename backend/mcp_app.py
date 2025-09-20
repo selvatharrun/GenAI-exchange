@@ -41,6 +41,14 @@ except Exception:
     def process_pdf_with_document_ai(gcs_uri: str):
         return {"success": False, "error": "OCR module not available", "full_text": "", "pages": [], "form_fields": [], "confidence_score": None}
 
+try:
+    from Class.Precedent import find_precedents
+except Exception:
+    logger.warning("Precedent import failed, using stub")
+
+    def find_precedents(user_clause: str, location: str = "US") -> str:
+        return "Precedent module not available. Please check the Precedent.py file and dependencies."
+
 # ---- MCP Setup ----
 MCP_NAME = os.getenv("MCP_NAME", "LegalDemystifierMCP")
 mcp = FastMCP(MCP_NAME) if FastMCP else None
@@ -195,6 +203,59 @@ if mcp:
         except Exception as e:
             logger.exception("extract_text_from_pdf failed")
             return {"error": str(e)}
+
+    @mcp.tool
+    def find_legal_precedents(clause: str, location: str = "US") -> dict:
+        """
+        Find relevant legal precedents for a given clause and jurisdiction.
+        
+        Args:
+            clause: The legal clause text to find precedents for
+            location: The jurisdiction/location (e.g., "US", "California", "India", "UK", "EU")
+            
+        Returns:
+            dict: Contains the precedents analysis with case names, years, jurisdictions, and relevance explanations
+        """
+        try:
+            logger.info(f"find_legal_precedents called with clause: {clause[:50]}... location: {location}")
+            
+            if not clause or not clause.strip():
+                return {"error": "clause text is required"}
+            
+            if not location or not location.strip():
+                location = "US"  # Default to US if no location provided
+            
+            # Call the precedent finding function
+            precedents_result = find_precedents(clause.strip(), location.strip())
+            
+            if precedents_result:
+                logger.info(f"Precedents found successfully for location: {location}")
+                return {
+                    "success": True,
+                    "clause": clause,
+                    "location": location,
+                    "precedents": precedents_result,
+                    "error": None
+                }
+            else:
+                logger.warning("No precedents returned from find_precedents function")
+                return {
+                    "success": False,
+                    "error": "No precedents found or analysis failed",
+                    "clause": clause,
+                    "location": location,
+                    "precedents": ""
+                }
+                
+        except Exception as e:
+            logger.exception("find_legal_precedents failed")
+            return {
+                "success": False,
+                "error": f"Precedent analysis failed: {str(e)}",
+                "clause": clause,
+                "location": location,
+                "precedents": ""
+            }
 
 # ---- Debug Middleware ----
 @app.middleware("http")
