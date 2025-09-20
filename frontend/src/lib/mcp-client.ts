@@ -1,5 +1,3 @@
-// lib/mcp-client.ts - Next.js optimized version
-
 import { Client } from '@modelcontextprotocol/sdk/client';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
@@ -100,7 +98,7 @@ class MCPClientManager {
     this.isConnected = false;
   }
 
-  async callTool(toolName: string, parameters: any): Promise<any> {
+  async callTool(toolName: string, parameters: Record<string, unknown>): Promise<Record<string, unknown>> {
     if (!this.client || !this.isConnected) {
       console.log(` Tool ${toolName}: Reconnecting...`);
       const connected = await this.connect();
@@ -151,11 +149,12 @@ class MCPClientManager {
       }
       
       // Check structuredContent as fallback
-      if (!answer && result.structuredContent) {
-        answer = result.structuredContent.answer || result.structuredContent.text;
+      if (!answer && result.structuredContent && typeof result.structuredContent === 'object') {
+        const structured = result.structuredContent as Record<string, unknown>;
+        answer = (structured.answer as string) || (structured.text as string);
       }
 
-      return answer || 'No response received';
+      return (answer as string) || 'No response received';
     } catch (error) {
       console.error('Error asking question:', error);
       throw error;
@@ -171,17 +170,18 @@ class MCPClientManager {
       });
 
       // MCP tool results have different structure - check content array
-      let uri = result.gcs_uri || result.uri || result.url;
-      
+      let uri = (result.gcs_uri as string) || (result.uri as string) || (result.url as string);
+
       // If not found, check in content array or structuredContent
-      if (!uri && result.content && result.content.length > 0) {
-        const content = result.content[0];
-        uri = content.gcs_uri || content.uri || content.url;
+      if (!uri && Array.isArray(result.content) && result.content.length > 0) {
+        const content = result.content[0] as Record<string, unknown>;
+        uri = (content.gcs_uri as string) || (content.uri as string) || (content.url as string);
       }
-      
+
       // Check structuredContent if still not found
-      if (!uri && result.structuredContent) {
-        uri = result.structuredContent.gcs_uri || result.structuredContent.uri || result.structuredContent.url;
+      if (!uri && result.structuredContent && typeof result.structuredContent === 'object') {
+        const structured = result.structuredContent as Record<string, unknown>;
+        uri = (structured.gcs_uri as string) || (structured.uri as string) || (structured.url as string);
       }
       
       
@@ -320,6 +320,76 @@ export const MCPService = {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Question failed',
+      };
+    }
+  },
+
+  // Extract text using OCR from PDF
+  async extractTextFromPdf(gsUri: string): Promise<{ success: boolean; data?: {fullText: string, pages: {page_number: number, text: string}[], formFields: unknown[], confidenceScore: number, totalPages: number, totalCharacters: number}; error?: string }> {
+    if (typeof window === 'undefined') {
+      return { success: false, error: 'Client-side only operation' };
+    }
+
+    try {
+      const client = getMCPClient();
+      await client.connect();
+
+      const result = await client.callTool('extract_text_from_pdf', {
+        gcs_uri: gsUri,
+      });
+
+      console.log('OCR result:', result);
+
+      // Extract the data from MCP tool result
+      let ocrData = result;
+
+      // Handle MCP content array format
+      if (Array.isArray(result.content) && result.content.length > 0) {
+        console.log('Checking content array:', result.content);
+        for (const item of result.content) {
+          if (typeof item === 'string') {
+            try {
+              ocrData = JSON.parse(item) as Record<string, unknown>;
+              break;
+            } catch {
+              // If not JSON, treat as text
+              ocrData = { success: true, full_text: item, pages: [] };
+              break;
+            }
+          } else if (item && typeof item === 'object') {
+            ocrData = item as Record<string, unknown>;
+            break;
+          }
+        }
+      }
+
+      // Check structuredContent as fallback
+      if (!ocrData.success && result.structuredContent && typeof result.structuredContent === 'object') {
+        ocrData = result.structuredContent as Record<string, unknown>;
+      }
+
+      if (ocrData.success) {
+        return {
+          success: true,
+          data: {
+            fullText: ocrData.full_text as string,
+            pages: ocrData.pages as {page_number: number, text: string}[],
+            formFields: ocrData.form_fields as unknown[],
+            confidenceScore: ocrData.confidence_score as number,
+            totalPages: ocrData.total_pages as number,
+            totalCharacters: ocrData.total_characters as number
+          }
+        };
+      } else {
+        return {
+          success: false,
+          error: (ocrData.error as string) || 'OCR processing failed'
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'OCR failed',
       };
     }
   },

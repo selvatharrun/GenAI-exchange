@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, ChangeEvent, KeyboardEvent, useEffect } from "react";
+import { useState, useCallback, useRef, ChangeEvent, KeyboardEvent, useEffect, DragEvent } from "react";
 import {
   SidebarProvider,
   Sidebar,
@@ -32,10 +32,12 @@ import {
   BookOpen,
   Zap,
   Plus,
+  ScanText,
 } from "lucide-react";
 import { useSidebar } from "./ui/sidebar";
 import QnAChat from "@/components/qna-chat";
 import NotesTab from "@/components/notes-tab";
+import OcrView from "@/components/ocr-view";
 import { Note } from "@/components/type";
 import { MCPService, useMCPClient } from "@/lib/mcp-client";
 
@@ -81,9 +83,14 @@ function DocunoteContent() {
   // Enhanced Q&A State
   const [questions, setQuestions] = useState<QnAItem[]>([]);
 
+  // OCR State
+  const [ocrData, setOcrData] = useState<{fullText: string | null, pages: {page_number: number, text: string}[] | null}>({fullText: null, pages: null});
+  const [isGeneratingOcr, setIsGeneratingOcr] = useState(false);
+
   // UI State
   const [activeTab, setActiveTab] = useState("pdf-viewer");
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
+  const [isDragOver, setIsDragOver] = useState(false);
 
   // Auto-save notes to localStorage
   useEffect(() => {
@@ -147,79 +154,7 @@ function DocunoteContent() {
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type === "application/pdf") {
-      setIsLoadingPdf(true);
-      setShowUploadArea(false);
-      
-      // Reset all states
-      setPdfFile(file);
-      setNotes([]);
-      setQuestions([]);
-      setCurrentPage(1);
-      setPageInput("1");
-      setTotalPages(0);
-
-      // Create PDF stats
-      const stats: PdfStats = {
-        totalPages: 0,
-        fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-        uploadDate: new Date(),
-        readingProgress: 0,
-        notesCount: 0,
-        questionsCount: 0
-      };
-      setPdfStats(stats);
-
-      // Preview PDF locally first
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        setPdfDataUrl(dataUrl);
-        toast({
-          title: "✅ PDF Loaded Successfully",
-          description: `${file.name} is ready for local viewing.`,
-        });
-      };
-      
-      reader.onerror = () => {
-        setIsLoadingPdf(false);
-        toast({
-          variant: "destructive",
-          title: "Loading Error",
-          description: "Failed to load the PDF file. Please try again.",
-        });
-      };
-      reader.readAsDataURL(file);
-
-      // Upload PDF using MCP Service
-      try {
-        const uploadResult = await MCPService.uploadPdf(file);
-        
-        if (uploadResult.success && uploadResult.gsUri) {
-          setGsUri(uploadResult.gsUri);
-          setConnectionStatus('connected');
-          toast({
-            title: "🚀 Upload Successful",
-            description: "PDF uploaded and ready for AI analysis via MCP!",
-          });
-        } else {
-          setConnectionStatus('error');
-          toast({
-            title: "Upload Failed",
-            description: uploadResult.error || "Failed to upload PDF to MCP server",
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-        setConnectionStatus('error');
-        console.error('MCP upload error:', error);
-        toast({
-          title: "MCP Connection Error",
-          description: "Failed to connect to MCP server for PDF upload.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoadingPdf(false);
-      }
+      await handleFileUpload(file);
     } else {
       toast({
         variant: "destructive",
@@ -233,6 +168,112 @@ function DocunoteContent() {
     fileInputRef.current?.click();
   };
 
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      if (file.type === "application/pdf") {
+        handleFileUpload(file);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Invalid File Type",
+          description: "Please upload a valid PDF file only.",
+        });
+      }
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    setIsLoadingPdf(true);
+    setShowUploadArea(false);
+
+    // Reset all states
+    setPdfFile(file);
+    setNotes([]);
+    setQuestions([]);
+    setOcrData({fullText: null, pages: null});
+    setCurrentPage(1);
+    setPageInput("1");
+    setTotalPages(0);
+
+    // Create PDF stats
+    const stats: PdfStats = {
+      totalPages: 0,
+      fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+      uploadDate: new Date(),
+      readingProgress: 0,
+      notesCount: 0,
+      questionsCount: 0
+    };
+    setPdfStats(stats);
+
+    // Preview PDF locally first
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      setPdfDataUrl(dataUrl);
+      toast({
+        title: "✅ PDF Loaded Successfully",
+        description: `${file.name} is ready for local viewing.`,
+      });
+    };
+
+    reader.onerror = () => {
+      setIsLoadingPdf(false);
+      toast({
+        variant: "destructive",
+        title: "Loading Error",
+        description: "Failed to load the PDF file. Please try again.",
+      });
+    };
+    reader.readAsDataURL(file);
+
+    // Upload PDF using MCP Service
+    try {
+      const uploadResult = await MCPService.uploadPdf(file);
+
+      if (uploadResult.success && uploadResult.gsUri) {
+        setGsUri(uploadResult.gsUri);
+        setConnectionStatus('connected');
+        toast({
+          title: "🚀 Upload Successful",
+          description: "PDF uploaded and ready for AI analysis via MCP!",
+        });
+      } else {
+        setConnectionStatus('error');
+        toast({
+          title: "Upload Failed",
+          description: uploadResult.error || "Failed to upload PDF to MCP server",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      setConnectionStatus('error');
+      console.error('MCP upload error:', error);
+      toast({
+        title: "MCP Connection Error",
+        description: "Failed to connect to MCP server for PDF upload.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPdf(false);
+    }
+  };
+
   const handleDeletePdf = () => {
     if (pdfFile && notes.length > 0) {
       localStorage.setItem(`docunote-notes-${pdfFile.name}`, JSON.stringify(notes));
@@ -242,6 +283,7 @@ function DocunoteContent() {
     setPdfDataUrl(null);
     setNotes([]);
     setQuestions([]);
+    setOcrData({fullText: null, pages: null});
     setCurrentPage(1);
     setPageInput("1");
     setTotalPages(0);
@@ -300,7 +342,7 @@ function DocunoteContent() {
     const notesText = notes.map((note, index) =>
       `Note ${index + 1} (Page ${note.page}) - ${normalizeDate(note.timestamp).toLocaleDateString()}\n${note.text}\n\n`
     ).join('');
-    
+
     const blob = new Blob([notesText], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -310,29 +352,78 @@ function DocunoteContent() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
+
     toast({
       title: "📄 Notes Exported",
       description: "Your notes have been saved to a text file.",
     });
   };
 
+  const handleGenerateOcr = async () => {
+    if (!gsUri) {
+      toast({
+        variant: "destructive",
+        title: "No PDF uploaded",
+        description: "Please upload a PDF first to generate OCR.",
+      });
+      return;
+    }
+
+    setIsGeneratingOcr(true);
+
+    try {
+      const result = await MCPService.extractTextFromPdf(gsUri);
+
+      if (result.success && result.data) {
+        setOcrData({
+          fullText: result.data.fullText,
+          pages: result.data.pages
+        });
+
+        toast({
+          title: "✅ OCR Generated Successfully",
+          description: `Extracted ${result.data.totalCharacters} characters from ${result.data.totalPages} pages.`,
+        });
+
+        // Switch to OCR tab to show results
+        setActiveTab("ocr");
+      } else {
+        toast({
+          variant: "destructive",
+          title: "OCR Generation Failed",
+          description: result.error || "Failed to extract text from PDF.",
+        });
+      }
+    } catch (error) {
+      console.error('OCR generation error:', error);
+      toast({
+        variant: "destructive",
+        title: "OCR Error",
+        description: "An error occurred while generating OCR.",
+      });
+    } finally {
+      setIsGeneratingOcr(false);
+    }
+  };
+
   return (
     <>
-      <Sidebar collapsible="offcanvas" className="border-r">
-        <SidebarHeader className="p-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+      <Sidebar collapsible="offcanvas" className="border-r glass">
+        <SidebarHeader className="p-4 border-b bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-950/40 dark:to-indigo-950/40 backdrop-blur-sm">
           <div className="flex h-8 items-center justify-between">
             <div className="flex items-center gap-3 group-data-[collapsible=icon]:hidden">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg">
                 <FileText className="h-4 w-4" />
               </div>
               <div>
-                <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
                   DocuNote
                 </h1>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Zap className="h-3 w-3" />
-                  AI-Powered Analysis
+                  <Zap className="h-3 w-3 text-yellow-500" />
+                  <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-medium">
+                    AI-Powered Analysis
+                  </span>
                 </p>
               </div>
             </div>
@@ -341,50 +432,62 @@ function DocunoteContent() {
         </SidebarHeader>
 
         <div className="px-4 py-2 border-b">
-          <div className={`flex items-center gap-2 text-xs px-2 py-1 rounded-full ${
-            connectionStatus === 'connected' 
-              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+          <div className={`flex items-center gap-2 text-xs px-3 py-2 rounded-full glass ${
+            connectionStatus === 'connected'
+              ? 'bg-green-100/80 text-green-700 dark:bg-green-900/40 dark:text-green-300'
               : connectionStatus === 'error'
-              ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-              : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+              ? 'bg-red-100/80 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+              : 'bg-yellow-100/80 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'
           }`}>
             <div className={`w-2 h-2 rounded-full ${
-              connectionStatus === 'connected' ? 'bg-green-500' : 
+              connectionStatus === 'connected' ? 'bg-green-500' :
               connectionStatus === 'error' ? 'bg-red-500' : 'bg-yellow-500'
             }`} />
-            {connectionStatus === 'connected' ? 'MCP Server Connected' : 
-              connectionStatus === 'error' ? 'MCP Offline' : 'Connecting to MCP...'}
+            <span className="font-medium">
+              {connectionStatus === 'connected' ? 'MCP Server Connected' :
+                connectionStatus === 'error' ? 'MCP Offline' : 'Connecting to MCP...'}
+            </span>
           </div>
         </div>
 
         <div className="p-4 space-y-3 border-b">
           {showUploadArea ? (
             <div className="space-y-3">
-              <Button 
-                onClick={handleUploadClick} 
-                className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                disabled={isLoadingPdf}
+              {/* Drag and Drop Area */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer glass ${
+                  isDragOver
+                    ? 'border-blue-500 bg-blue-50/20 dark:bg-blue-900/20'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-blue-400'
+                } ${isLoadingPdf ? 'pointer-events-none opacity-50' : ''}`}
+                onClick={handleUploadClick}
               >
-                {isLoadingPdf ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Processing PDF...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="mr-2 h-5 w-5" />
-                    Upload PDF Document
-                  </>
-                )}
-              </Button>
-              
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground">
-                  Upload your PDF for MCP-powered AI analysis
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Maximum file size: 50MB
-                </p>
+                <div className="flex flex-col items-center gap-3">
+                  <div className="p-3 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+                    {isLoadingPdf ? (
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    ) : (
+                      <Upload className="h-6 w-6" />
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <h3 className="font-semibold text-sm">
+                      {isLoadingPdf ? 'Processing PDF...' :
+                       isDragOver ? 'Drop your PDF here!' : 'Upload PDF Document'}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {isDragOver ? 'Release to upload' : 'Drag & drop or click to browse'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Max size: 50MB • PDF files only
+                    </p>
+                  </div>
+                </div>
+
               </div>
             </div>
           ) : (
@@ -409,7 +512,7 @@ function DocunoteContent() {
           
           {pdfFile && (
             <div className="space-y-3">
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="p-3 glass rounded-lg border glow-blue/50">
                 <div className="flex items-center gap-2 mb-2">
                   <FileText className="h-4 w-4 text-blue-600" />
                   <span className="text-sm font-medium text-blue-900 dark:text-blue-100 truncate">
@@ -434,13 +537,33 @@ function DocunoteContent() {
               </div>
               
               <div className="flex gap-2 mt-3">
-                <Button 
-                  variant="destructive" 
-                  onClick={handleDeletePdf} 
+                <Button
+                  variant="outline"
+                  onClick={handleGenerateOcr}
+                  size="sm"
+                  className="flex-1"
+                  disabled={isGeneratingOcr || !gsUri}
+                >
+                  {isGeneratingOcr ? (
+                    <>
+                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                      OCR...
+                    </>
+                  ) : (
+                    <>
+                      <ScanText className="mr-1 h-3 w-3" />
+                      Generate OCR
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  variant="destructive"
+                  onClick={handleDeletePdf}
                   size="sm"
                   className="flex-1"
                 >
-                  <Trash2 className="mr-1 h-3 w-3" /> 
+                  <Trash2 className="mr-1 h-3 w-3" />
                   Remove
                 </Button>
               </div>
@@ -450,7 +573,7 @@ function DocunoteContent() {
 
         <ScrollArea className="flex-1">
           <SidebarContent className="p-4">
-            <div className="mt-6 p-4 bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-900/50 dark:to-gray-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+            <div className="mt-6 p-4 glass rounded-lg border">
               {/* <h4 className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-300 flex items-center gap-2">
                 <BookOpen className="h-4 w-4" />
                 Guide
@@ -500,13 +623,13 @@ function DocunoteContent() {
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
             <div className="flex items-center justify-between mb-4">
-              <TabsList className="h-10 bg-muted/50">
+              <TabsList className="h-10 glass border">
                 <TabsTrigger value="pdf-viewer" className="flex items-center gap-2">
                   <Book className="w-4 h-4" />
                   <span className="hidden sm:inline">PDF Viewer</span>
                   <span className="sm:hidden">PDF</span>
                 </TabsTrigger>
-                
+
                 <TabsTrigger value="notes" disabled={!pdfFile} className="flex items-center gap-2 relative">
                   <PenSquare className="w-4 h-4" />
                   <span className="hidden sm:inline">Notes</span>
@@ -517,7 +640,7 @@ function DocunoteContent() {
                     </Badge>
                   )}
                 </TabsTrigger>
-                
+
                 <TabsTrigger value="q-and-a" disabled={!pdfFile} className="flex items-center gap-2 relative">
                   <MessageCircleQuestion className="w-4 h-4" />
                   <span className="hidden sm:inline">Q&A Chat</span>
@@ -525,6 +648,17 @@ function DocunoteContent() {
                   {questions.length > 0 && (
                     <Badge variant="secondary" className="ml-1 h-5 text-xs px-1.5 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
                       {questions.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+
+                <TabsTrigger value="ocr" disabled={!pdfFile} className="flex items-center gap-2 relative">
+                  <ScanText className="w-4 h-4" />
+                  <span className="hidden sm:inline">OCR Text</span>
+                  <span className="sm:hidden">OCR</span>
+                  {ocrData.fullText && (
+                    <Badge variant="secondary" className="ml-1 h-5 text-xs px-1.5 bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300">
+                      Ready
                     </Badge>
                   )}
                 </TabsTrigger>
@@ -562,6 +696,10 @@ function DocunoteContent() {
 
             <TabsContent value="q-and-a" className="flex-1 mt-0">
               <QnAChat gsUri={gsUri} pdfName={pdfFile?.name} />
+            </TabsContent>
+
+            <TabsContent value="ocr" className="flex-1 mt-0">
+              <OcrView ocrPages={ocrData.pages} fullText={ocrData.fullText} />
             </TabsContent>
           </Tabs>
         </div>
