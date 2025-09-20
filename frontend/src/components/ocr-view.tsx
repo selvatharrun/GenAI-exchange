@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Copy, ScanText } from "lucide-react";
+import { PenSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface OcrPage {
@@ -45,20 +46,21 @@ export default function OcrView({ ocrPages, fullText }: OcrViewProps) {
   }
 
   return (
-    <Card className="h-full border-0 glass rounded-xl overflow-hidden glow-teal">
-      <CardHeader className="border-b glass">
+    <div className="h-full border-0 glass rounded-xl overflow-hidden glow-teal">
+      <div className="border-b glass">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <ScanText className="h-5 w-5 text-teal-600" />
-            OCR Results
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <ScanText className="h-18 w-5 text-green-600" />
+           
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 top-0"> OCR Results</h2>
+          </div>
           <Button size="sm" variant="outline" onClick={() => handleCopyText(fullText)}>
             <Copy className="mr-2 h-4 w-4" />
             Copy All Text
           </Button>
         </div>
-      </CardHeader>
-      <CardContent className="p-0 h-[calc(100vh-16rem)]">
+      </div>
+      <div className="p-0 h-[calc(100vh-16rem)]">
         <ScrollArea className="h-full custom-scrollbar">
           <div className="p-6 space-y-6 font-serif">
             {ocrPages.map((page) => (
@@ -80,7 +82,7 @@ export default function OcrView({ ocrPages, fullText }: OcrViewProps) {
             ))}
           </div>
         </ScrollArea>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
