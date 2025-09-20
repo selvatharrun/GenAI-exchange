@@ -59,12 +59,12 @@ export default function NotesTab({ notes, setNotes }: NotesTabProps) {
   });
 
   return (
-    <Card className="h-full border-0 shadow-lg rounded-xl overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-b">
+    <div className="">
+      <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-b">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <PenSquare className="h-5 w-5 text-purple-600" />
-            My Notes
+          <div className="flex items-center gap-2">
+            <PenSquare className="h-18 w-5 text-purple-600" />
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 top-0">My Notes</h2>
             {notes.length > 0 && (
               <Badge
                 variant="secondary"
@@ -73,7 +73,7 @@ export default function NotesTab({ notes, setNotes }: NotesTabProps) {
                 {notes.length} notes
               </Badge>
             )}
-          </CardTitle>
+          </div>
 
           <div className="flex items-center gap-2">
             {/* Search */}
@@ -99,9 +99,9 @@ export default function NotesTab({ notes, setNotes }: NotesTabProps) {
             </select>
           </div>
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="p-0 h-[calc(100vh-16rem)]">
+      <div className="p-0 h-[calc(100vh-16rem)]">
         <ScrollArea className="h-full">
           <div className="p-4">
             {filteredNotes.length > 0 ? (
@@ -109,7 +109,7 @@ export default function NotesTab({ notes, setNotes }: NotesTabProps) {
                 {filteredNotes.map((note) => {
                   const ts = normalizeDate(note.timestamp);
                   return (
-                    <Card
+                    <div
                       key={note.id}
                       className={`group hover:shadow-md transition-all duration-200 border-l-4 ${
                         note.isStarred
@@ -117,7 +117,7 @@ export default function NotesTab({ notes, setNotes }: NotesTabProps) {
                           : "border-l-purple-400 hover:border-l-purple-500"
                       }`}
                     >
-                      <CardContent className="p-4">
+                      <div className="p-4">
                         <div className="flex justify-between items-start gap-3">
                           <div className="flex-1 min-w-0">
                             <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
@@ -177,8 +177,8 @@ export default function NotesTab({ notes, setNotes }: NotesTabProps) {
                             </Button>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -207,7 +207,7 @@ export default function NotesTab({ notes, setNotes }: NotesTabProps) {
             )}
           </div>
         </ScrollArea>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
