@@ -29,7 +29,7 @@ export default function OcrView({ ocrPages, fullText, onSaveNote }: OcrViewProps
     top: number;
     text: string;
     page: number;
-    actions: Array<{ label: string; icon: any; action: () => void }>;
+  actions: Array<{ label: string; icon: React.ElementType; action: () => void }>;
   } | null>(null);
 
   const handleCopyText = async (textToCopy: string | null) => {
@@ -175,7 +175,7 @@ export default function OcrView({ ocrPages, fullText, onSaveNote }: OcrViewProps
           ))}
           <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
           <div className="px-3 py-1 text-xs text-gray-500 dark:text-gray-400 max-w-[200px] truncate">
-            Page {menu.page}: "{menu.text}"
+            Page {menu.page}: &quot;{menu.text}&quot;
           </div>
         </div>
       )}

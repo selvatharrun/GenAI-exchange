@@ -212,7 +212,7 @@ export default function RiskFlagging({ notes, onBack, onViewNote }: RiskFlagging
             </span>
             <select
               value={selectedRiskLevel}
-              onChange={(e) => setSelectedRiskLevel(e.target.value as any)}
+              onChange={(e) => setSelectedRiskLevel(e.target.value as typeof selectedRiskLevel)}
               className="text-sm border border-input rounded-md bg-background px-2 py-1"
             >
               <option value="all">All Risks</option>
@@ -329,7 +329,7 @@ export default function RiskFlagging({ notes, onBack, onViewNote }: RiskFlagging
                             Problematic Clause:
                           </h4>
                           <p className="text-sm text-gray-800 dark:text-gray-200 font-mono">
-                            "{flag.clause}"
+                            &quot;{flag.clause}&quot;
                           </p>
                         </div>
 

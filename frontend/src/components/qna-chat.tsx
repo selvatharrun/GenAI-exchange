@@ -271,7 +271,7 @@ export default function QnAChat({ gsUri, pdfName }: QnAChatProps) {
               Ready to answer your questions
             </h3>
             <p className="text-gray-500 dark:text-gray-400 max-w-md">
-              Ask me anything about your PDF document. I'll analyze the content using MCP and provide detailed answers.
+              Ask me anything about your PDF document. I&apos;ll analyze the content using MCP and provide detailed answers.
             </p>
             {!gsUri && (
               <p className="text-amber-600 dark:text-amber-400 text-sm mt-4">

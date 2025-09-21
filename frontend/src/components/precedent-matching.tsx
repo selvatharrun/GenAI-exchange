@@ -84,7 +84,7 @@ export default function PrecedentMatching({ noteText, noteId, onBack }: Preceden
         if (lines.length === 0) return;
 
         // Try to extract structured information
-        let title = lines[0].replace(/\*\*/g, '').trim(); // Remove markdown bold
+  const title = lines[0].replace(/\*\*/g, '').trim(); // Remove markdown bold
         let year: number | undefined;
         let source = "Court Decision";
         let jurisdiction = "US";

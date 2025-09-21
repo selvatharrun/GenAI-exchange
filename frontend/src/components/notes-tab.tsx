@@ -106,7 +106,7 @@ export default function NotesTab({ notes, setNotes, onPrecedentMatching, onRiskF
             {/* Filter */}
             <select
               value={noteFilter}
-              onChange={(e) => setNoteFilter(e.target.value as any)}
+              onChange={(e) => setNoteFilter(e.target.value as typeof noteFilter)}
               className="h-8 px-2 text-sm border border-input rounded-md bg-background"
             >
               <option value="all">All Notes</option>
@@ -231,7 +231,7 @@ export default function NotesTab({ notes, setNotes, onPrecedentMatching, onRiskF
                       No notes added yet
                     </p>
                     <p className="text-sm text-muted-foreground/70">
-                      Select text from the PDF and click 'Save Note' to get started
+                      Select text from the PDF and click &apos;Save Note&apos; to get started
                     </p>
                   </>
                 )}

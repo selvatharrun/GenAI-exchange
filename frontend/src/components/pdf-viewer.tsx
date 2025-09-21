@@ -53,7 +53,7 @@ export function PdfViewer({
     left: number;
     top: number;
     text: string;
-    actions: Array<{ label: string; icon: any; action: () => void }>;
+  actions: Array<{ label: string; icon: React.ElementType; action: () => void }>;
   } | null>(null);
 
   const viewerRef = useRef<HTMLDivElement>(null);
@@ -442,7 +442,7 @@ export function PdfViewer({
             ))}
             <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
             <div className="px-3 py-1 text-xs text-gray-500 dark:text-gray-400 max-w-[200px] truncate">
-              "{menu.text}"
+              &quot;{menu.text}&quot;
             </div>
           </div>
         )}
