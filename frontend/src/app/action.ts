@@ -13,7 +13,7 @@ async function getMcpClient() {
       // ensure the url is reachable from your server, not just your browser
       await mcpClient.connect({
         type: "httpStream",
-        url: "http://localhost:8080/mcp", 
+        url: "https://legal-demystifier-backend-38771871641.asia-south1.run.app/mcp", 
       });
       console.log("MCP Client connected successfully on the server.");
     } catch (error) {

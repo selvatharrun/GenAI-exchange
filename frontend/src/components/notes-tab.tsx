@@ -6,15 +6,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PenSquare, Search, Book, Clock, Star, Copy, Trash2 } from "lucide-react";
+import { PenSquare, Search, Book, Clock, Star, Copy, Trash2, Scale, AlertTriangle } from "lucide-react";
 import { Note } from "@/components/type";
 
 interface NotesTabProps {
   notes: Note[];
   setNotes: React.Dispatch<React.SetStateAction<Note[]>>;
+  onPrecedentMatching?: (noteText: string, noteId: string) => void;
+  onRiskFlagging?: () => void;
 }
 
-export default function NotesTab({ notes, setNotes }: NotesTabProps) {
+export default function NotesTab({ notes, setNotes, onPrecedentMatching, onRiskFlagging }: NotesTabProps) {
   const [noteSearchTerm, setNoteSearchTerm] = useState("");
   const [noteFilter, setNoteFilter] = useState<"all" | "starred" | "recent">("all");
 
@@ -76,6 +78,20 @@ export default function NotesTab({ notes, setNotes }: NotesTabProps) {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Risk Flagging Button */}
+            {notes.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRiskFlagging}
+                className="h-8 bg-red-50 hover:bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-300 dark:border-red-700"
+                title="Analyze all notes for risk factors"
+              >
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                Risk Flagging
+              </Button>
+            )}
+
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-3 w-3 text-muted-foreground" />
@@ -124,20 +140,36 @@ export default function NotesTab({ notes, setNotes }: NotesTabProps) {
                               {note.text}
                             </p>
 
-                            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Book className="h-3 w-3" />
-                                Page {note.page}
+                            <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Book className="h-3 w-3" />
+                                  Page {note.page}
+                                </div>
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  {ts.toLocaleDateString()}
+                                </div>
+                                {note.category && (
+                                  <Badge variant="outline" className="text-xs h-5">
+                                    {note.category}
+                                  </Badge>
+                                )}
                               </div>
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                {ts.toLocaleDateString()}
+
+                              {/* Precedent Matching Buttons */}
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => onPrecedentMatching?.(note.text, note.id)}
+                                  className="h-6 px-2 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-300"
+                                  title="Find precedent matches"
+                                >
+                                  <Scale className="h-3 w-3 mr-1" />
+                                  Precedent Match
+                                </Button>
                               </div>
-                              {note.category && (
-                                <Badge variant="outline" className="text-xs h-5">
-                                  {note.category}
-                                </Badge>
-                              )}
                             </div>
                           </div>
 
