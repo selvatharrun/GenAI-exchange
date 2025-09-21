@@ -16,7 +16,7 @@ class MCPClientManager {
 
   constructor(config: MCPClientConfig = {}) {
     this.config = {
-      serverUrl: config.serverUrl || process.env.NEXT_PUBLIC_MCP_SERVER_URL || 'http://localhost:8080/mcp/',
+      serverUrl: config.serverUrl || process.env.NEXT_PUBLIC_MCP_SERVER_URL || 'https://legal-demystifier-backend-38771871641.asia-south1.run.app/mcp/',
       timeout: config.timeout || 30000,
       retries: config.retries || 3,
     };
