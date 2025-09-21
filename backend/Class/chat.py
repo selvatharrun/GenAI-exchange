@@ -290,7 +290,7 @@ def automated_chat(question, file_path=None, stream_response=False, chat_history
 
         return response
 
-MCP_SERVER_URL = "https://legal-demystifier-backend-38771871641.asia-south1.run.app"
+MCP_SERVER_URL = "https://sodium-coil-470706-f4-38771871641.asia-south1.run.app"
 
 def call_mcp_tool(tool_name, params):
     response = requests.post(f"{MCP_SERVER_URL}/tools/{tool_name}", json=params)
