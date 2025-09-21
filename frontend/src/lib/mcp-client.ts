@@ -401,6 +401,74 @@ export const MCPService = {
     return client.getConnectionStatus();
   },
 
+  // Find legal precedents for a clause
+  async findPrecedents(clause: string, location: string = "US"): Promise<{ success: boolean; data?: {clause: string, location: string, precedents: string}; error?: string }> {
+    if (typeof window === 'undefined') {
+      return { success: false, error: 'Client-side only operation' };
+    }
+
+    try {
+      const client = getMCPClient();
+      await client.connect();
+
+      const result = await client.callTool('find_legal_precedents', {
+        clause,
+        location,
+      });
+
+      console.log('Precedent search result:', result);
+
+      // Extract the data from MCP tool result
+      let precedentData = result;
+
+      // Handle MCP content array format
+      if (Array.isArray(result.content) && result.content.length > 0) {
+        console.log('Checking content array:', result.content);
+        for (const item of result.content) {
+          if (typeof item === 'string') {
+            try {
+              precedentData = JSON.parse(item) as Record<string, unknown>;
+              break;
+            } catch {
+              // If not JSON, treat as text - assume it's the precedents text
+              precedentData = { success: true, clause, location, precedents: item };
+              break;
+            }
+          } else if (item && typeof item === 'object') {
+            precedentData = item as Record<string, unknown>;
+            break;
+          }
+        }
+      }
+
+      // Check structuredContent as fallback
+      if (!precedentData.success && result.structuredContent && typeof result.structuredContent === 'object') {
+        precedentData = result.structuredContent as Record<string, unknown>;
+      }
+
+      if (precedentData.success) {
+        return {
+          success: true,
+          data: {
+            clause: precedentData.clause as string,
+            location: precedentData.location as string,
+            precedents: precedentData.precedents as string
+          }
+        };
+      } else {
+        return {
+          success: false,
+          error: (precedentData.error as string) || 'Precedent search failed'
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Precedent search failed',
+      };
+    }
+  },
+
   // Disconnect
   async disconnect(): Promise<void> {
     if (typeof window === 'undefined') return;

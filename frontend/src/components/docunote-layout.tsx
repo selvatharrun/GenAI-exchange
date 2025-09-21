@@ -38,6 +38,8 @@ import { useSidebar } from "./ui/sidebar";
 import QnAChat from "@/components/qna-chat";
 import NotesTab from "@/components/notes-tab";
 import OcrView from "@/components/ocr-view";
+import PrecedentMatching from "@/components/precedent-matching";
+import RiskFlagging from "@/components/risk-flagging";
 import { Note } from "@/components/type";
 import { MCPService, useMCPClient } from "@/lib/mcp-client";
 
@@ -91,6 +93,13 @@ function DocunoteContent() {
   const [activeTab, setActiveTab] = useState("pdf-viewer");
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const [isDragOver, setIsDragOver] = useState(false);
+
+  // Precedent Matching State
+  const [showPrecedentMatching, setShowPrecedentMatching] = useState(false);
+  const [selectedNoteForPrecedent, setSelectedNoteForPrecedent] = useState<{text: string, id: string} | null>(null);
+
+  // Risk Flagging State
+  const [showRiskFlagging, setShowRiskFlagging] = useState(false);
 
   // Auto-save notes to localStorage
   useEffect(() => {
@@ -406,6 +415,28 @@ function DocunoteContent() {
     }
   };
 
+  const handlePrecedentMatching = (noteText: string, noteId: string) => {
+    setSelectedNoteForPrecedent({ text: noteText, id: noteId });
+    setShowPrecedentMatching(true);
+  };
+
+  const handleRiskFlagging = () => {
+    setShowRiskFlagging(true);
+  };
+
+  const handleBackToNotes = () => {
+    setShowPrecedentMatching(false);
+    setShowRiskFlagging(false);
+    setSelectedNoteForPrecedent(null);
+    setActiveTab("notes");
+  };
+
+  const handleViewNote = (noteId: string) => {
+    setShowRiskFlagging(false);
+    setActiveTab("notes");
+    // You could add scrolling to the specific note here
+  };
+
   return (
     <>
       <Sidebar collapsible="offcanvas" className="border-r glass">
@@ -688,10 +719,26 @@ function DocunoteContent() {
             </TabsContent>
 
             <TabsContent value="notes" className="flex-1 mt-0">
-              <NotesTab 
-                notes={notes}
-                setNotes={setNotes}
-              />
+              {showPrecedentMatching && selectedNoteForPrecedent ? (
+                <PrecedentMatching
+                  noteText={selectedNoteForPrecedent.text}
+                  noteId={selectedNoteForPrecedent.id}
+                  onBack={handleBackToNotes}
+                />
+              ) : showRiskFlagging ? (
+                <RiskFlagging
+                  notes={notes}
+                  onBack={handleBackToNotes}
+                  onViewNote={handleViewNote}
+                />
+              ) : (
+                <NotesTab
+                  notes={notes}
+                  setNotes={setNotes}
+                  onPrecedentMatching={handlePrecedentMatching}
+                  onRiskFlagging={handleRiskFlagging}
+                />
+              )}
             </TabsContent>
 
             <TabsContent value="q-and-a" className="flex-1 mt-0">
@@ -699,7 +746,11 @@ function DocunoteContent() {
             </TabsContent>
 
             <TabsContent value="ocr" className="flex-1 mt-0">
-              <OcrView ocrPages={ocrData.pages} fullText={ocrData.fullText} />
+              <OcrView
+                ocrPages={ocrData.pages}
+                fullText={ocrData.fullText}
+                onSaveNote={handleSaveNote}
+              />
             </TabsContent>
           </Tabs>
         </div>
