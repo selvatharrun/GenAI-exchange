@@ -1,16 +1,19 @@
-
-# 🚀 GenAI-exchange (DocuNote)
+<h1 align="center">🚀 GenAI-exchange (DocuNote)</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/FastMCP-FF6B6B.svg" alt="FastMCP">
-  <img src="https://img.shields.io/badge/MCP-8B5CF6.svg" alt="MCP">
-  <img src="https://img.shields.io/badge/Vertex_AI-FF9500.svg" alt="Vertex AI">
-  <img src="https://img.shields.io/badge/FastAPI-00C896.svg" alt="FastAPI">
-  <img src="https://img.shields.io/badge/GCP-4285F4.svg" alt="GCP">
-  <img src="https://img.shields.io/badge/Python-FFD43B.svg" alt="Python">
+  <img src="https://img.shields.io/badge/Python-3.11+-3776AB.svg" alt="Python">
+  <img src="https://img.shields.io/badge/TypeScript-5.0+-3178C6.svg" alt="TypeScript">
+  <img src="https://img.shields.io/badge/FastAPI-0.115+-00C896.svg" alt="FastAPI">
+  <img src="https://img.shields.io/badge/FastMCP-1.0+-FF6B6B.svg" alt="FastMCP">
+  <img src="https://img.shields.io/badge/MCP-Protocol-8B5CF6.svg" alt="MCP">
+  <img src="https://img.shields.io/badge/Vertex_AI-Latest-FF9500.svg" alt="Vertex AI">
+  <img src="https://img.shields.io/badge/GCP-Cloud-4285F4.svg" alt="GCP">
 </p>
 
-**GenAI-exchange** is a cutting-edge full-stack application that revolutionizes legal document analysis using **Model Context Protocol (MCP)** architecture. This intelligent system simplifies the understanding of legal documents for both lawyers and non-lawyers through AI-powered analysis.
+<p align="center">
+<strong>GenAI-exchange</strong> is a cutting-edge full-stack application that revolutionizes legal document analysis using <strong>Model Context Protocol (MCP)</strong> architecture. This intelligent system simplifies the understanding of legal documents for both lawyers and non-lawyers through AI-powered analysis.
+</p>
+
 
 ## 🎯 Key Capabilities
 
